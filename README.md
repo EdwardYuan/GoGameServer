@@ -5,6 +5,7 @@ a simple message driven game server in go.
 
 * gnet
 * kafka
+* redis
 
 ### Build
 
