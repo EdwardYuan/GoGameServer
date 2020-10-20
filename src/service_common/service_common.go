@@ -6,7 +6,7 @@ import (
 )
 
 type Service interface {
-	Start(_name string, args []interface{}) (err error)
+	Start() (err error)
 	Stop()
 	Run()
 }
