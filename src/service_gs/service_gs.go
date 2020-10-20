@@ -1,20 +1,27 @@
 package service_gs
 
 import (
+	"github.com/panjf2000/ants/v2"
 	"github.com/panjf2000/gnet"
 	"gogameserver/service_common"
 )
 
 type GameServer struct {
 	*service_common.ServerCommon
-	name string
+	workPool *ants.Pool
+	name     string
 }
 
 func NewGameServer(_name string) *GameServer {
-	return &GameServer{
+	gs := &GameServer{
 		ServerCommon: &service_common.ServerCommon{},
 		name:         _name,
 	}
+	pool, err := ants.NewPool(1024)
+	if err == nil {
+		gs.workPool = pool
+	}
+	return gs
 }
 
 func (gs *GameServer) Start() (err error) {
