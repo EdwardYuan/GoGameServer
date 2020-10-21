@@ -20,10 +20,14 @@ func (s *ServerCommon) React(frame []byte, c gnet.Conn) (out []byte, action gnet
 	return
 }
 
-func (s *ServerCommon) Encode(data []byte) (msg MsgHandler.Message, err error) {
+func (s *ServerCommon) Encode(msg MsgHandler.Message) (err error) {
 	return
 }
 
-func (s *ServerCommon) Decode(msg MsgHandler.Message) (err error) {
+func (s *ServerCommon) Decode(data []byte) (msg MsgHandler.Message, err error) {
 	return
+}
+
+func (s *ServerCommon) HandleMessage(msg MsgHandler.Message) {
+
 }

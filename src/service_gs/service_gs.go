@@ -3,6 +3,7 @@ package service_gs
 import (
 	"github.com/panjf2000/ants/v2"
 	"github.com/panjf2000/gnet"
+	"gogameserver/MsgHandler"
 	"gogameserver/service_common"
 )
 
@@ -34,5 +35,20 @@ func (gs *GameServer) Stop() {
 }
 
 func (gs *GameServer) Run() {
+
+}
+
+func (gs *GameServer) React(frame []byte, c gnet.Conn) (out []byte, action gnet.Action) {
+	msg, err := gs.Decode(frame)
+	if err != nil {
+		gs.AddMessageNode(&msg)
+	}
+	return
+}
+
+func (gs *GameServer) AddMessageNode(msg *MsgHandler.Message) {
+	gs.workPool.Submit(func() {
+
+	})
 
 }
