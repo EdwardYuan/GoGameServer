@@ -4,6 +4,7 @@ import (
 	"github.com/panjf2000/ants/v2"
 	"github.com/panjf2000/gnet"
 	"gogameserver/MsgHandler"
+	"gogameserver/lib"
 	"gogameserver/service_common"
 )
 
@@ -22,19 +23,23 @@ func NewGameServer(_name string) *GameServer {
 	if err == nil {
 		gs.workPool = pool
 	}
+	lib.InitLogger()
+	lib.SugarLogger.Info("Service ", _name, " created")
 	return gs
 }
 
 func (gs *GameServer) Start() (err error) {
 	gnet.Serve(gs, "tcp://127.0.0.1:9000", gnet.WithMulticore(true))
+	lib.SugarLogger.Info("Service ", gs.name, " Start...")
 	return
 }
 
 func (gs *GameServer) Stop() {
-
+	lib.SugarLogger.Info("Service ", gs.name, " Stopped.")
 }
 
 func (gs *GameServer) Run() {
+	lib.SugarLogger.Info("Service run")
 
 }
 
