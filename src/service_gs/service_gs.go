@@ -1,6 +1,7 @@
 package service_gs
 
 import (
+	"github.com/Shopify/sarama"
 	"github.com/panjf2000/ants/v2"
 	"github.com/panjf2000/gnet"
 	"gogameserver/MsgHandler"
@@ -10,8 +11,9 @@ import (
 
 type GameServer struct {
 	*service_common.ServerCommon
-	workPool *ants.Pool
-	name     string
+	workPool    *ants.Pool
+	name        string
+	KafkaClient sarama.Client
 }
 
 func NewGameServer(_name string) *GameServer {
@@ -19,12 +21,16 @@ func NewGameServer(_name string) *GameServer {
 		ServerCommon: &service_common.ServerCommon{},
 		name:         _name,
 	}
+	lib.InitLogger()
+	lib.SugarLogger.Info("Service ", _name, " created")
 	pool, err := ants.NewPool(1024)
 	if err == nil {
 		gs.workPool = pool
 	}
-	lib.InitLogger()
-	lib.SugarLogger.Info("Service ", _name, " created")
+	gs.KafkaClient, err = sarama.NewClient(lib.KafkaBroker, sarama.NewConfig())
+	if err != nil {
+		lib.SugarLogger.Error(err)
+	}
 	return gs
 }
 
@@ -55,5 +61,8 @@ func (gs *GameServer) AddMessageNode(msg *MsgHandler.Message) {
 	gs.workPool.Submit(func() {
 
 	})
+}
 
+func (gs *GameServer) NewConsumer(topic string) (consumer sarama.Consumer, err error) {
+	return sarama.NewConsumer(lib.KafkaBroker, gs.KafkaClient.Config())
 }
