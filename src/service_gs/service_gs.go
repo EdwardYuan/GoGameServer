@@ -35,7 +35,7 @@ func NewGameServer(_name string) *GameServer {
 }
 
 func (gs *GameServer) Start() (err error) {
-	gnet.Serve(gs, "tcp://127.0.0.1:9000", gnet.WithMulticore(true))
+	gnet.Serve(gs, lib.GNetAddr, gnet.WithMulticore(true), gnet.WithCodec(&lib.MsgCodec{}))
 	lib.SugarLogger.Info("Service ", gs.name, " Start...")
 	return
 }
