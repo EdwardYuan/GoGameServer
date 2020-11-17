@@ -3,7 +3,6 @@ package MsgHandler
 import (
 	"encoding/binary"
 	"gogameserver/lib"
-	"golang.org/x/net/dns/dnsmessage"
 	"net"
 )
 
@@ -115,7 +114,7 @@ func (mh *MessageHeadReader) ReadMessage(session *Session) IMessageReader {
 		}
 		// ead body
 		if mh.Offset < mh.Head.headerLength+mh.Head.bodyLength {
-			readnum, err := session.con.Read(mh.Data[mh.Offset : mh.Head.headerLength+mh.Head.bodyLength])
+			readNum, err := session.con.Read(mh.Data[mh.Offset : mh.Head.headerLength+mh.Head.bodyLength])
 			if err != nil {
 				lib.SugarLogger.Errorf("MessageHeadReader ReadMessage Err: %+v", err)
 				return nil
