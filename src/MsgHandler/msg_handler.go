@@ -3,6 +3,7 @@ package MsgHandler
 import (
 	"encoding/binary"
 	"gogameserver/lib"
+	"golang.org/x/net/dns/dnsmessage"
 	"net"
 )
 
@@ -12,6 +13,7 @@ const (
 
 // TODO
 type Session struct {
+	id  uint64
 	con net.Conn
 }
 
@@ -70,6 +72,25 @@ func (head *MessageHead) Decode(buf []byte) {
 	head.bodyLength = binary.BigEndian.Uint32(buf[5:9])
 }
 
+//接收和发送的消息结构
+type Message struct {
+	Flag      MessageFlag //标志位
+	Command   uint32      //消息类型
+	SessionId uint64      //会话
+	Data      []byte
+	//pool       *sync.Pool TODO 内存池优化
+}
+
+func newMessage(session *Session, flag MessageFlag, command uint32, data []byte) *Message {
+	//TODO 从内存池中拿取对象减少内存分配
+	message := &Message{}
+	message.Flag = flag
+	message.Command = command
+	message.SessionId = session.id
+	message.Data = data
+	return message
+}
+
 func (mh *MessageHeadReader) ReadMessage(session *Session) IMessageReader {
 	if mh.Offset < mh.Head.headerLength {
 		//ead Head
@@ -92,7 +113,30 @@ func (mh *MessageHeadReader) ReadMessage(session *Session) IMessageReader {
 			lib.SugarLogger.Errorf("MessageHeadReader ReadMessage Err: too big data.")
 			return nil
 		}
-
+		// ead body
+		if mh.Offset < mh.Head.headerLength+mh.Head.bodyLength {
+			readnum, err := session.con.Read(mh.Data[mh.Offset : mh.Head.headerLength+mh.Head.bodyLength])
+			if err != nil {
+				lib.SugarLogger.Errorf("MessageHeadReader ReadMessage Err: %+v", err)
+				return nil
+			}
+			mh.Offset += uint32(readNum)
+			if mh.Offset < mh.Head.headerLength+mh.Head.bodyLength {
+				lib.SugarLogger.Errorf("MessageHeadReader ReadMessage Err: read body not finished.")
+				return nil
+			} else if mh.Offset == mh.Head.headerLength+mh.Head.bodyLength {
+				mh.Offset = 0
+				bodyData := make([]byte, mh.Head.bodyLength)
+				copy(bodyData, mh.Data[mh.Head.headerLength:mh.Head.headerLength+mh.Head.bodyLength])
+				message := newMessage(session, mh.Head.flag, mh.Head.command, bodyData)
+				return message
+			} else {
+				lib.SugarLogger.Errorf("Read message error, should not reach here.")
+				return nil
+			}
+		}
+		lib.SugarLogger.Errorf("Read Message Error, read Session %d, read offset %d", session.id, mh.Offset)
+		return nil
 	}
-	return MessageHeadReader{}
+	return nil
 }
