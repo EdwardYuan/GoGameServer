@@ -1,28 +1,18 @@
 package MsgHandler
 
-import "encoding/binary"
+import (
+	"encoding/binary"
+	"gogameserver/lib"
+	"net"
+)
 
 const (
 	READ_MESSAGE_INIT_LENGTH = 1024
 )
 
-type MessageReadWithHead struct {
-	Head    *MessageHead
-	Offset  uint32
-	Data    []byte
-	DataLen int32
-}
-
-func NewMessageReadWithHead() *MessageReadWithHead {
-	return &MessageReadWithHead{
-		Head:   NewMessageHead(),
-		Offset: 0,
-		Data:   make([]byte, READ_MESSAGE_INIT_LENGTH),
-	}
-}
-
 // TODO
 type Session struct {
+	con net.Conn
 }
 
 type IMessageReader interface {
@@ -37,12 +27,34 @@ type MessageHead struct {
 	headerLength uint32
 }
 
+type MessageHeadReader struct {
+	Head       *MessageHead
+	Offset     uint32
+	Data       []byte
+	MaxDataLen uint32
+}
+
+type MessageHeadWriter struct {
+	Head    *MessageHead
+	Offset  uint32
+	Buf     []byte
+	DataLen int32
+}
+
 func NewMessageHead() *MessageHead {
 	return &MessageHead{
 		flag:         0,
 		command:      0,
 		bodyLength:   0,
 		headerLength: 9,
+	}
+}
+
+func NewMessageHeadReader() *MessageHeadReader {
+	return &MessageHeadReader{
+		Head:   NewMessageHead(),
+		Offset: 0,
+		Data:   make([]byte, READ_MESSAGE_INIT_LENGTH),
 	}
 }
 
@@ -58,6 +70,29 @@ func (head *MessageHead) Decode(buf []byte) {
 	head.bodyLength = binary.BigEndian.Uint32(buf[5:9])
 }
 
-func (mh *MessageReadWithHead) ReadMessage(session *Session) IMessageReader {
-	return MessageReadWithHead{}
+func (mh *MessageHeadReader) ReadMessage(session *Session) IMessageReader {
+	if mh.Offset < mh.Head.headerLength {
+		//ead Head
+		readNum, err := session.con.Read(mh.Data[mh.Offset:mh.Head.headerLength])
+		if err != nil {
+			lib.SugarLogger.Errorf("MessageHeadReader ReadMessage err: %+v", err)
+			return nil
+		}
+		mh.Offset += uint32(readNum)
+		if mh.Offset < mh.Head.headerLength {
+			lib.SugarLogger.Errorf("MessageHeadReader ReadMessage err: Head length read error.")
+			return nil
+		}
+		mh.Head.Decode(mh.Data[:mh.Head.headerLength])
+		if mh.Head.bodyLength == 0 {
+			lib.SugarLogger.Errorf("MessageHeadReader ReadMessage Err: message body length is zero.")
+			return nil
+		}
+		if mh.Head.bodyLength > mh.MaxDataLen {
+			lib.SugarLogger.Errorf("MessageHeadReader ReadMessage Err: too big data.")
+			return nil
+		}
+
+	}
+	return MessageHeadReader{}
 }
