@@ -1,47 +1,49 @@
 package service_gs
 
 import (
+	"fmt"
 	"github.com/Shopify/sarama"
 	"github.com/panjf2000/ants/v2"
 	"github.com/panjf2000/gnet"
 	"gogameserver/MsgHandler"
 	"gogameserver/lib"
+	"gogameserver/protocol"
 	"gogameserver/service_common"
 )
 
 type GameServer struct {
 	*service_common.ServerCommon
-	workPool    *ants.Pool
-	name        string
-	KafkaClient sarama.Client
+	workPool     *ants.Pool
+	KafkaClient  sarama.Client
+	protoFactory *protocol.Factory
 }
 
 func NewGameServer(_name string) *GameServer {
-	gs := &GameServer{
-		ServerCommon: &service_common.ServerCommon{},
-		name:         _name,
+	pool, err1 := ants.NewPool(1024)
+	client, err2 := sarama.NewClient(lib.KafkaBroker, sarama.NewConfig())
+	if err1 != nil || err2 != nil {
+		fmt.Println("NewGameServer Error: ", err1, err2)
+		return nil
 	}
 	lib.InitLogger()
 	lib.SugarLogger.Info("Service ", _name, " created")
-	pool, err := ants.NewPool(1024)
-	if err == nil {
-		gs.workPool = pool
+	return &GameServer{
+		ServerCommon: &service_common.ServerCommon{
+			Name: _name,
+		},
+		workPool:    pool,
+		KafkaClient: client,
 	}
-	gs.KafkaClient, err = sarama.NewClient(lib.KafkaBroker, sarama.NewConfig())
-	if err != nil {
-		lib.SugarLogger.Error(err)
-	}
-	return gs
 }
 
 func (gs *GameServer) Start() (err error) {
 	gnet.Serve(gs, lib.GNetAddr, gnet.WithMulticore(true), gnet.WithCodec(&lib.MsgCodec{}))
-	lib.SugarLogger.Info("Service ", gs.name, " Start...")
+	lib.SugarLogger.Info("Service ", gs.Name, " Start...")
 	return
 }
 
 func (gs *GameServer) Stop() {
-	lib.SugarLogger.Info("Service ", gs.name, " Stopped.")
+	lib.SugarLogger.Info("Service ", gs.Name, " Stopped.")
 }
 
 func (gs *GameServer) Run() {

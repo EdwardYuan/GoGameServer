@@ -12,6 +12,9 @@ type Service interface {
 }
 
 type ServerCommon struct {
+	Name      string
+	Id        int
+	CloseChan chan int
 	*gnet.EventServer
 }
 
