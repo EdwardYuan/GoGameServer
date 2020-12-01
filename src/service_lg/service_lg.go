@@ -34,7 +34,7 @@ func NewLoginGate(_name string, id int) *LoginGate {
 		},
 		kafka:       &client,
 		workPool:    pool,
-		consumeChan: mke(chan *sarama.ConsumerMessage),
+		consumeChan: make(chan *sarama.ConsumerMessage),
 	}
 }
 
