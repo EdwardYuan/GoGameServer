@@ -11,11 +11,18 @@ import (
 
 const DefaultPoolSize = 1024
 
+var ServiceLogin *LoginGate
+
+func init() {
+	ServiceLogin = NewLoginGate("loginGate", 0)
+}
+
 type LoginGate struct {
 	*service_common.ServerCommon
 	consumeChan chan *sarama.ConsumerMessage
 	kafka       *sarama.Client
 	workPool    *ants.Pool
+	err         error
 }
 
 func NewLoginGate(_name string, id int) *LoginGate {
@@ -45,7 +52,7 @@ func (lg *LoginGate) Close() {
 func (lg *LoginGate) ConsumeMessage(msg *sarama.ConsumerMessage) {
 	//TODO check topic && partition id
 	// decode msg and submit task to pool
-	lg.workPool.Submit(func() {
+	lg.err = lg.workPool.Submit(func() {
 
 	})
 }
