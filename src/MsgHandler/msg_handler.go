@@ -1,8 +1,8 @@
 package MsgHandler
 
 import (
+	"GoGameServer/src/lib"
 	"encoding/binary"
-	"gogameserver/lib"
 	"net"
 )
 

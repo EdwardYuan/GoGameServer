@@ -1,8 +1,8 @@
 package service_common
 
 import (
+	"GoGameServer/src/MsgHandler"
 	"github.com/panjf2000/gnet"
-	"gogameserver/MsgHandler"
 )
 
 type Service interface {

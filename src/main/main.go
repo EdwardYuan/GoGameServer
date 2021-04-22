@@ -1,8 +1,8 @@
 package main
 
 import (
+	"GoGameServer/src/service_gs"
 	"fmt"
-	"gogameserver/service_gs"
 )
 
 const PROJECT_NAME = "Common Game"

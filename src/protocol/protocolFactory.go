@@ -1,6 +1,6 @@
 package protocol
 
-import "gogameserver/MsgHandler"
+import "GoGameServer/src/MsgHandler"
 
 // ProtocolFactory
 type Factory struct {

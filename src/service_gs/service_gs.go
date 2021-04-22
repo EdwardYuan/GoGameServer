@@ -1,14 +1,14 @@
 package service_gs
 
 import (
+	"GoGameServer/src/MsgHandler"
+	"GoGameServer/src/lib"
+	"GoGameServer/src/protocol"
+	"GoGameServer/src/service_common"
 	"fmt"
 	"github.com/Shopify/sarama"
 	"github.com/panjf2000/ants/v2"
 	"github.com/panjf2000/gnet"
-	"gogameserver/MsgHandler"
-	"gogameserver/lib"
-	"gogameserver/protocol"
-	"gogameserver/service_common"
 )
 
 type GameServer struct {
