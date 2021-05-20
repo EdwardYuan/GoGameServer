@@ -7,6 +7,10 @@ var (
 	SugarLogger *zap.SugaredLogger
 )
 
+func init() {
+	InitLogger()
+}
+
 func InitLogger() {
 	Logger, _ = zap.NewProduction()
 	SugarLogger = Logger.Sugar()

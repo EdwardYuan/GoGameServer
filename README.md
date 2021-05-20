@@ -4,7 +4,7 @@ a simple message driven game server in go.
 ### Requirement
 
 * gnet
-* kafka
+* RabbitMQ
 * redis
 
 ### Build
@@ -18,7 +18,6 @@ a simple message driven game server in go.
 
 * Windows
 
-* Docker
 
 
 

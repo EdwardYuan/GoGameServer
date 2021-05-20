@@ -1,12 +1,10 @@
 package service_lg
 
 import (
-	"fmt"
+	"GoGameServer/src/service_common"
 	"github.com/Shopify/sarama"
 	"github.com/panjf2000/ants/v2"
 	"github.com/panjf2000/gnet"
-	"gogameserver/lib"
-	"gogameserver/service_common"
 )
 
 const DefaultPoolSize = 1024
@@ -19,19 +17,14 @@ func init() {
 
 type LoginGate struct {
 	*service_common.ServerCommon
-	consumeChan chan *sarama.ConsumerMessage
-	kafka       *sarama.Client
-	workPool    *ants.Pool
-	err         error
+	workPool *ants.Pool
+	err      error
 }
 
 func NewLoginGate(_name string, id int) *LoginGate {
 	eventSvr := gnet.EventServer{}
-	client, err := sarama.NewClient(lib.KafkaBroker, sarama.NewConfig())
 	pool, err := ants.NewPool(DefaultPoolSize)
-	if err != nil {
-		fmt.Println(err)
-	}
+	service_common.FailOnError(err, "LoginGate Make Pool Error")
 	return &LoginGate{
 		ServerCommon: &service_common.ServerCommon{
 			Name:        _name,
@@ -39,9 +32,7 @@ func NewLoginGate(_name string, id int) *LoginGate {
 			EventServer: &eventSvr,
 			CloseChan:   make(chan int),
 		},
-		kafka:       &client,
-		workPool:    pool,
-		consumeChan: make(chan *sarama.ConsumerMessage),
+		workPool: pool,
 	}
 }
 
