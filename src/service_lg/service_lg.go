@@ -39,6 +39,10 @@ func (lg *LoginGate) Close() {
 
 }
 
+func (lg *LoginGate) Start() {
+	lg.run()
+}
+
 func (lg *LoginGate) run() {
 	for {
 		select {
