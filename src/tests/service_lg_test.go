@@ -1,7 +1,8 @@
-package service_lg
+package tests
 
 import (
 	"GoGameServer/src/service_common"
+	"GoGameServer/src/service_lg"
 	"github.com/panjf2000/ants/v2"
 	"reflect"
 	"testing"
@@ -19,13 +20,9 @@ func TestLoginGate_Close(t *testing.T) {
 	}{
 		// TODO: Add test cases.
 	}
-	for _, tt := range tests {
+	for idx, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			lg := &LoginGate{
-				ServerCommon: tt.fields.ServerCommon,
-				workPool:     tt.fields.workPool,
-				err:          tt.fields.err,
-			}
+			lg := service_lg.NewLoginGate(tt.name, idx)
 			lg.StartRabbit()
 		})
 	}
@@ -43,13 +40,9 @@ func TestLoginGate_run(t *testing.T) {
 	}{
 		// TODO: Add test cases.
 	}
-	for _, tt := range tests {
+	for idx, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			lg := &LoginGate{
-				ServerCommon: tt.fields.ServerCommon,
-				workPool:     tt.fields.workPool,
-				err:          tt.fields.err,
-			}
+			lg := service_lg.NewLoginGate(tt.name, idx)
 			lg.Start()
 		})
 	}
@@ -63,13 +56,13 @@ func TestNewLoginGate(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want *LoginGate
+		want *service_lg.LoginGate
 	}{
 		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NewLoginGate(tt.args._name, tt.args.id); !reflect.DeepEqual(got, tt.want) {
+			if got := service_lg.NewLoginGate(tt.args._name, tt.args.id); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("NewLoginGate() = %v, want %v", got, tt.want)
 			}
 		})

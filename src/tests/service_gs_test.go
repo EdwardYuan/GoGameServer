@@ -1,9 +1,10 @@
-package service_gs
+package tests
 
 import (
 	"GoGameServer/src/MsgHandler"
 	"GoGameServer/src/protocol"
 	"GoGameServer/src/service_common"
+	"GoGameServer/src/service_gs"
 	"github.com/panjf2000/ants/v2"
 	"github.com/panjf2000/gnet"
 	"reflect"
@@ -28,11 +29,7 @@ func TestGameServer_AddMessageNode(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gs := &GameServer{
-				ServerCommon: tt.fields.ServerCommon,
-				workPool:     tt.fields.workPool,
-				protoFactory: tt.fields.protoFactory,
-			}
+			gs := service_gs.NewGameServer(tt.name)
 			gs.Start()
 		})
 	}
@@ -59,11 +56,7 @@ func TestGameServer_React(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gs := &GameServer{
-				ServerCommon: tt.fields.ServerCommon,
-				workPool:     tt.fields.workPool,
-				protoFactory: tt.fields.protoFactory,
-			}
+			gs := service_gs.NewGameServer(tt.name)
 			gotOut, gotAction := gs.React(tt.args.frame, tt.args.c)
 			if !reflect.DeepEqual(gotOut, tt.wantOut) {
 				t.Errorf("React() gotOut = %v, want %v", gotOut, tt.wantOut)
@@ -89,11 +82,7 @@ func TestGameServer_Run(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gs := &GameServer{
-				ServerCommon: tt.fields.ServerCommon,
-				workPool:     tt.fields.workPool,
-				protoFactory: tt.fields.protoFactory,
-			}
+			gs := service_gs.NewGameServer(tt.name)
 			gs.Start()
 		})
 	}
@@ -114,11 +103,7 @@ func TestGameServer_Start(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gs := &GameServer{
-				ServerCommon: tt.fields.ServerCommon,
-				workPool:     tt.fields.workPool,
-				protoFactory: tt.fields.protoFactory,
-			}
+			gs := service_gs.NewGameServer(tt.name)
 			if err := gs.Start(); (err != nil) != tt.wantErr {
 				t.Errorf("Start() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -140,11 +125,7 @@ func TestGameServer_Stop(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gs := &GameServer{
-				ServerCommon: tt.fields.ServerCommon,
-				workPool:     tt.fields.workPool,
-				protoFactory: tt.fields.protoFactory,
-			}
+			gs := service_gs.NewGameServer(tt.name)
 			gs.Start()
 
 		})
@@ -158,13 +139,13 @@ func TestNewGameServer(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want *GameServer
+		want *service_gs.GameServer
 	}{
 		// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NewGameServer(tt.args._name); !reflect.DeepEqual(got, tt.want) {
+			if got := service_gs.NewGameServer(tt.args._name); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("NewGameServer() = %v, want %v", got, tt.want)
 			}
 		})
