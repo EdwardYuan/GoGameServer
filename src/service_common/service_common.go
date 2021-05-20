@@ -14,9 +14,10 @@ type Service interface {
 }
 
 type ServerCommon struct {
-	Name      string
-	Id        int
-	CloseChan chan int
+	Name       string
+	Id         int
+	CloseChan  chan int
+	RabbitChan chan bool
 	*gnet.EventServer
 }
 
@@ -27,12 +28,16 @@ func FailOnError(err error, msg string) {
 }
 
 func (s *ServerCommon) StartRabbit() {
+	s.RabbitChan = make(chan bool)
 	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
-	FailOnError(err, "Connect to RabbitMQ")
 	defer conn.Close()
+	FailOnError(err, "Connect to RabbitMQ")
 
+	<-s.RabbitChan
 	ch, err := conn.Channel()
+	defer ch.Close()
 	FailOnError(err, "Rabbit Make channel error")
+
 	err = ch.ExchangeDeclare(
 		s.Name,
 		"fanout",
@@ -43,6 +48,19 @@ func (s *ServerCommon) StartRabbit() {
 		nil,
 	)
 	FailOnError(err, "Declare Exchange error")
+	queue, err := ch.QueueDeclare(s.Name, false, true, false, false, nil)
+	FailOnError(err, "Declare RabbitMQ queue Error")
+
+	err = ch.ExchangeBind(
+		queue.Name,
+		queue.Name,
+		queue.Name,
+		false,
+		nil,
+	)
+	FailOnError(err, "Declare Bind Error")
+
+	ch.Consume(queue.Name, "", true, false, false, false, nil)
 
 }
 
