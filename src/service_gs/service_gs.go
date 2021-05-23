@@ -22,6 +22,7 @@ func NewGameServer(_name string) *GameServer {
 		fmt.Println("NewGameServer Error: ", err1)
 		return nil
 	}
+
 	lib.InitLogger()
 	lib.SugarLogger.Info("Service ", _name, " created")
 	return &GameServer{
