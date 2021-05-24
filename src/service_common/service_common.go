@@ -17,7 +17,8 @@ type ServerCommon struct {
 	Name       string
 	Id         int
 	CloseChan  chan int
-	RabbitChan chan bool
+	rabbitConn *amqp.Connection
+	RabbitChan *amqp.Channel
 	*gnet.EventServer
 }
 
@@ -27,18 +28,21 @@ func FailOnError(err error, msg string) {
 	}
 }
 
+func (s *ServerCommon) Stop() {
+	defer s.RabbitChan.Close()
+	defer s.rabbitConn.Close()
+
+}
+
 func (s *ServerCommon) StartRabbit() {
-	s.RabbitChan = make(chan bool)
 	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
 	defer conn.Close()
 	FailOnError(err, "Connect to RabbitMQ")
 
-	<-s.RabbitChan
-	ch, err := conn.Channel()
-	defer ch.Close()
+	s.RabbitChan, err = conn.Channel()
 	FailOnError(err, "Rabbit Make channel error")
 
-	err = ch.ExchangeDeclare(
+	err = s.RabbitChan.ExchangeDeclare(
 		s.Name,
 		"fanout",
 		false,
@@ -48,10 +52,10 @@ func (s *ServerCommon) StartRabbit() {
 		nil,
 	)
 	FailOnError(err, "Declare Exchange error")
-	queue, err := ch.QueueDeclare(s.Name, false, true, false, false, nil)
+	queue, err := s.RabbitChan.QueueDeclare(s.Name, false, true, false, false, nil)
 	FailOnError(err, "Declare RabbitMQ queue Error")
 
-	err = ch.ExchangeBind(
+	err = s.RabbitChan.ExchangeBind(
 		queue.Name,
 		queue.Name,
 		queue.Name,
@@ -59,9 +63,6 @@ func (s *ServerCommon) StartRabbit() {
 		nil,
 	)
 	FailOnError(err, "Declare Bind Error")
-
-	ch.Consume(queue.Name, "", true, false, false, false, nil)
-
 }
 
 func (s *ServerCommon) React(frame []byte, c gnet.Conn) (out []byte, action gnet.Action) {

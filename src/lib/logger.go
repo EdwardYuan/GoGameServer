@@ -1,6 +1,9 @@
 package lib
 
-import "go.uber.org/zap"
+import (
+	"go.uber.org/zap"
+	"log"
+)
 
 var (
 	Logger      *zap.Logger
@@ -19,4 +22,10 @@ func InitLogger() {
 func SyncLogger() {
 	Logger.Sync()
 	SugarLogger.Sync()
+}
+
+func SysLoggerFatal(err error, msg string) {
+	if err != nil {
+		log.Fatalf("Fatal: %s: %s", err, msg)
+	}
 }
