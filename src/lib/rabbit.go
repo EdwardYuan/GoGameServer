@@ -1,7 +1,6 @@
 package lib
 
 import (
-	"flag"
 	"github.com/streadway/amqp"
 )
 
@@ -11,6 +10,10 @@ type RabbitClient struct {
 	Channel   *amqp.Channel
 	Exchanges map[string]string
 	Queues    map[string]*amqp.Queue
+}
+
+func NewRabbitClient() *RabbitClient {
+	return &RabbitClient{}
 }
 
 //Start makes a connection of RabbitMQ and a channel, then declare an exchange and a queue
@@ -46,6 +49,11 @@ func (r *RabbitClient) Start(url string, xName string, qName string, xType strin
 	return err
 }
 
+func (r *RabbitClient) Stop() {
+	defer r.Channel.Close()
+	defer r.Conn.Close()
+}
+
 //NewExchange declare a new exchange and add to map
 func (r *RabbitClient) NewExchange(xName string, kind string, durable bool,
 	autoDel bool, internal bool, noWait bool, args amqp.Table) error {
@@ -78,7 +86,7 @@ func (r *RabbitClient) NewQueue(qName string, durable bool, autoDel bool,
 	)
 	SysLoggerFatal(err, "RabbitMQ Declare Queue Error")
 	if err == nil {
-		r.Queues[qName] = q
+		r.Queues[qName] = &q
 	}
 	return err
 }
@@ -92,6 +100,16 @@ func (r *RabbitClient) ExchangeBind(dest string, src string, routingKey string,
 		src,
 		noWait,
 		args,
+	)
+}
+
+func (r *RabbitClient) DefaultBind(dest string, src string, key string) error {
+	return r.Channel.ExchangeBind(
+		dest,
+		key,
+		src,
+		false,
+		nil,
 	)
 }
 

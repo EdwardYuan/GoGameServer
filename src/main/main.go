@@ -5,10 +5,10 @@ import (
 	"fmt"
 )
 
-const PROJECT_NAME = "Common Game"
+const ProjectName = "Common Game"
 
 func main() {
-	fmt.Printf("%s service start...", PROJECT_NAME)
-	gs := service_gs.NewGameServer(fmt.Sprintf(PROJECT_NAME+"%d", 1))
+	fmt.Printf("%s service start...", ProjectName)
+	gs := service_gs.NewGameServer(fmt.Sprintf(ProjectName+"_%d", 1))
 	gs.Start()
 }

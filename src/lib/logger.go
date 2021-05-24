@@ -29,3 +29,10 @@ func SysLoggerFatal(err error, msg string) {
 		log.Fatalf("Fatal: %s: %s", err, msg)
 	}
 }
+
+func FatalOnError(err error, msg string) {
+	if err != nil {
+		Logger.Fatal(msg)
+		panic(nil)
+	}
+}
