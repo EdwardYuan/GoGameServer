@@ -4,8 +4,11 @@ import (
 	"GoGameServer/src/MsgHandler"
 	"GoGameServer/src/config"
 	"GoGameServer/src/lib"
+	"fmt"
 	"github.com/panjf2000/gnet"
 	"github.com/spf13/viper"
+	"go.uber.org/zap/zapcore"
+	"time"
 )
 
 type Service interface {
@@ -20,6 +23,7 @@ type ServerCommon struct {
 	Id        int
 	CloseChan chan int
 	Rabbit    *lib.RabbitClient
+	SvrTick   *time.Ticker
 	*gnet.EventServer
 }
 
@@ -38,14 +42,26 @@ func (s *ServerCommon) LoadConfig(path string) error {
 	return nil
 }
 
+func (s *ServerCommon) Run() {
+	select {
+	case <-s.SvrTick.C:
+		s.Rabbit.SimpleConsume("queue", "")
+	case <-s.CloseChan:
+		s.Stop()
+	}
+}
+
 func (s *ServerCommon) Start() {
 	s.LoadConfig("./config")
+	s.SvrTick = time.NewTicker(time.Duration(time.Millisecond))
 	s.Rabbit = lib.NewRabbitClient()
 	s.Rabbit.Start(config.RabbitUrl, "exchange", "queue", "fanout")
 }
 
 func (s *ServerCommon) React(frame []byte, c gnet.Conn) (out []byte, action gnet.Action) {
-
+	msg, err := s.Decode(frame)
+	lib.Log(zapcore.DebugLevel, "gnet receive message", err)
+	fmt.Println(msg) // to remove
 	return
 }
 

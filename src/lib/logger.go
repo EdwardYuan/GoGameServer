@@ -2,6 +2,7 @@ package lib
 
 import (
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 	"log"
 )
 
@@ -34,5 +35,20 @@ func FatalOnError(err error, msg string) {
 	if err != nil {
 		Logger.Fatal(msg)
 		panic(nil)
+	}
+}
+
+func Log(logLevel zapcore.Level, msg string, err error) {
+	if err != nil {
+		SugarLogger.Errorf(msg, err)
+		return
+	}
+	switch logLevel {
+	case zap.DebugLevel:
+		SugarLogger.Debugf(msg)
+	case zap.InfoLevel:
+		SugarLogger.Infof(msg)
+	default:
+		SugarLogger.Debugf(msg)
 	}
 }

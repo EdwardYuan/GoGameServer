@@ -144,8 +144,8 @@ func (r *RabbitClient) SimplePublish(xName string, key string, data []byte) erro
 }
 
 func (r *RabbitClient) Consume(qName string, consumer string, autoAck bool,
-	exclusive bool, noLocal bool, noWait bool, args amqp.Table) error {
-	_, err := r.Channel.Consume(
+	exclusive bool, noLocal bool, noWait bool, args amqp.Table) (<-chan amqp.Delivery, error) {
+	return r.Channel.Consume(
 		qName,
 		consumer,
 		autoAck,
@@ -154,11 +154,10 @@ func (r *RabbitClient) Consume(qName string, consumer string, autoAck bool,
 		noWait,
 		args,
 	)
-	return err
 }
 
-func (r *RabbitClient) SimpleConsume(qName string, consumer string) error {
-	_, err := r.Channel.Consume(
+func (r *RabbitClient) SimpleConsume(qName string, consumer string) (<-chan amqp.Delivery, error) {
+	return r.Channel.Consume(
 		qName,
 		consumer,
 		false,
@@ -167,5 +166,4 @@ func (r *RabbitClient) SimpleConsume(qName string, consumer string) error {
 		false,
 		nil,
 	)
-	return err
 }
