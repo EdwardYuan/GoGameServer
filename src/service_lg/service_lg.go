@@ -45,10 +45,8 @@ func (lg *LoginGate) Start() {
 }
 
 func (lg *LoginGate) run() {
-	for {
-		select {
-		case <-lg.CloseChan:
-			lg.Close()
-		}
+	select {
+	case <-lg.CloseChan:
+		lg.Close()
 	}
 }

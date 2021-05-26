@@ -3,6 +3,7 @@ package service_common
 import (
 	"GoGameServer/src/MsgHandler"
 	"GoGameServer/src/config"
+	"GoGameServer/src/global"
 	"GoGameServer/src/lib"
 	"fmt"
 	"github.com/panjf2000/gnet"
@@ -62,6 +63,15 @@ func (s *ServerCommon) React(frame []byte, c gnet.Conn) (out []byte, action gnet
 	msg, err := s.Decode(frame)
 	lib.Log(zapcore.DebugLevel, "gnet receive message", err)
 	fmt.Println(msg) // to remove
+	switch global.ServerMap.GetSvrTypeByAddr(c.RemoteAddr()) {
+	case global.ServerDatabase:
+	case global.ServerGame:
+	case global.ServerGate:
+
+	case global.ServerLogin:
+	default:
+
+	}
 	return
 }
 

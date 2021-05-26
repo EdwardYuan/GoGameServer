@@ -16,7 +16,7 @@ type GameServer struct {
 	protoFactory *protocol.Factory
 }
 
-func NewGameServer(_name string) *GameServer {
+func NewGameServer(_name string, id int) *GameServer {
 	lib.InitLogger()
 	pool, err1 := ants.NewPool(1024)
 	lib.FatalOnError(err1, "NewGameServer Error")
@@ -25,6 +25,7 @@ func NewGameServer(_name string) *GameServer {
 	return &GameServer{
 		ServerCommon: &service_common.ServerCommon{
 			Name: _name,
+			Id:   id,
 		},
 		runChannel: make(chan bool),
 		workPool:   pool,
