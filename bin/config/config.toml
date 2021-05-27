@@ -1,2 +1,11 @@
 [rabbitmq]
 url="amqp://guest:guest@localhost:5672/"
+[gameserver]
+addr="127.0.0.1"
+port="8889"
+[logingate]
+addr="127.0.0.1"
+prot="8888"
+[gamegate]
+addr="127.0.0.1"
+prot="8890"

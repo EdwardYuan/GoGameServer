@@ -1,7 +1,5 @@
 package global
 
-import "net"
-
 type ServerType int
 
 const (
@@ -13,16 +11,16 @@ const (
 )
 
 type ServerMapAddress struct {
-	Servers map[net.Addr]ServerType
+	Servers map[string]ServerType
 }
 
 func NewServerMapAddress() *ServerMapAddress {
 	return &ServerMapAddress{
-		Servers: make(map[net.Addr]ServerType),
+		Servers: make(map[string]ServerType),
 	}
 }
 
-func (s *ServerMapAddress) MapAddrToServerName(addr net.Addr, svrType ServerType) {
+func (s *ServerMapAddress) MapAddrToServerName(addr string, svrType ServerType) {
 	if s.Servers != nil {
 		if _, ok := s.Servers[addr]; !ok {
 			s.Servers[addr] = svrType
@@ -30,7 +28,7 @@ func (s *ServerMapAddress) MapAddrToServerName(addr net.Addr, svrType ServerType
 	}
 }
 
-func (s *ServerMapAddress) GetSvrTypeByAddr(addr net.Addr) ServerType {
+func (s *ServerMapAddress) GetSvrTypeByAddr(addr string) ServerType {
 	if s.Servers != nil {
 		return s.Servers[addr]
 	} else {

@@ -1,3 +1,7 @@
 package global
 
-var ServerMap ServerMapAddress
+var ServerMap *ServerMapAddress
+
+func GlobalInit() {
+	ServerMap = NewServerMapAddress()
+}

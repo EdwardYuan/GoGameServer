@@ -1,6 +1,7 @@
 package main
 
 import (
+	"GoGameServer/src/global"
 	"GoGameServer/src/service_gs"
 	"GoGameServer/src/service_lg"
 	"fmt"
@@ -22,6 +23,8 @@ func main() {
 	if err != nil {
 		serviceIdx = 1
 	}
+	// Init Global Variables
+	global.GlobalInit()
 	switch strings.ToLower(serviceName) {
 	case "game":
 		gs := service_gs.NewGameServer(fmt.Sprintf(serviceName+"_%d", serviceIdx), serviceIdx)

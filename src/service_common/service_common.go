@@ -39,6 +39,8 @@ func (s *ServerCommon) LoadConfig(path string) error {
 	viper.SetConfigType("toml")
 	err := viper.ReadInConfig()
 	config.RabbitUrl = viper.GetString("rabbitmq.url")
+	config.GameServerAddr = viper.GetString("gameserver.addr")
+	config.LoginGateAddr = viper.GetString("logingate.addr")
 	lib.FatalOnError(err, "Load Config Error")
 	return nil
 }
@@ -63,7 +65,7 @@ func (s *ServerCommon) React(frame []byte, c gnet.Conn) (out []byte, action gnet
 	msg, err := s.Decode(frame)
 	lib.Log(zapcore.DebugLevel, "gnet receive message", err)
 	fmt.Println(msg) // to remove
-	switch global.ServerMap.GetSvrTypeByAddr(c.RemoteAddr()) {
+	switch global.ServerMap.GetSvrTypeByAddr(c.RemoteAddr().String()) {
 	case global.ServerDatabase:
 	case global.ServerGame:
 	case global.ServerGate:

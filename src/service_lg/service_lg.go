@@ -1,6 +1,8 @@
 package service_lg
 
 import (
+	"GoGameServer/src/config"
+	"GoGameServer/src/global"
 	"GoGameServer/src/lib"
 	"GoGameServer/src/service_common"
 	"github.com/panjf2000/ants/v2"
@@ -10,10 +12,6 @@ import (
 const DefaultPoolSize = 1024
 
 var ServiceLogin *LoginGate
-
-func init() {
-	ServiceLogin = NewLoginGate("loginGate", 0)
-}
 
 type LoginGate struct {
 	*service_common.ServerCommon
@@ -25,6 +23,7 @@ func NewLoginGate(_name string, id int) *LoginGate {
 	eventSvr := gnet.EventServer{}
 	pool, err := ants.NewPool(DefaultPoolSize)
 	lib.FatalOnError(err, "LoginGate Make Pool Error")
+	global.ServerMap.MapAddrToServerName(config.LoginGateAddr, global.ServerLogin)
 	return &LoginGate{
 		ServerCommon: &service_common.ServerCommon{
 			Name:        _name,

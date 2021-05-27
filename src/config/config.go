@@ -1,5 +1,7 @@
 package config
 
 var (
-	RabbitUrl string
+	RabbitUrl      string
+	GameServerAddr string
+	LoginGateAddr  string
 )
