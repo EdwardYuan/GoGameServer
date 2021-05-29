@@ -55,10 +55,11 @@ func (s *ServerCommon) Run() {
 }
 
 func (s *ServerCommon) Start() {
-	s.LoadConfig("./config")
+	lib.FatalOnError(s.LoadConfig("./config"), "Load Config Error")
 	s.SvrTick = time.NewTicker(time.Duration(time.Millisecond))
 	s.Rabbit = lib.NewRabbitClient()
-	s.Rabbit.Start(config.RabbitUrl, "exchange", "queue", "fanout")
+	err := s.Rabbit.Start(config.RabbitUrl, "exchange", "queue", "fanout")
+	lib.FatalOnError(err, "Start RabbitMQ Error")
 }
 
 func (s *ServerCommon) React(frame []byte, c gnet.Conn) (out []byte, action gnet.Action) {

@@ -9,3 +9,5 @@ prot="8888"
 [gamegate]
 addr="127.0.0.1"
 prot="8890"
+[mysql]
+addr="127.0.0.1:3306"
