@@ -16,6 +16,7 @@ limitations under the License.
 package cmd
 
 import (
+	"GoGameServer/src/run"
 	"fmt"
 	"github.com/spf13/cobra"
 	"os"
@@ -28,7 +29,7 @@ var cfgFile string
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "service_lg",
+	Use:   "run",
 	Short: "A brief description of your application",
 	Long: `A longer description that spans multiple lines and likely contains
 examples and usage of using your application. For example:
@@ -38,7 +39,10 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
-	// Run: func(cmd *cobra.Command, args []string) { },
+	Run: func(cmd *cobra.Command, args []string) {
+
+		run.RunServer(args)
+	},
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -54,7 +58,7 @@ func init() {
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.service_lg.yaml)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.run.yaml)")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
@@ -71,9 +75,9 @@ func initConfig() {
 		home, err := homedir.Dir()
 		cobra.CheckErr(err)
 
-		// Search config in home directory with name ".service_lg" (without extension).
+		// Search config in home directory with name ".run" (without extension).
 		viper.AddConfigPath(home)
-		viper.SetConfigName(".service_lg")
+		viper.SetConfigName(".run")
 	}
 
 	viper.AutomaticEnv() // read in environment variables that match

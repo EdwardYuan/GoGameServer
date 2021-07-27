@@ -3,3 +3,5 @@
 /.idea/vcs.xml
 /.idea/watcherTasks.xml
 /.idea/workspace.xml
+*.exe
+/.github

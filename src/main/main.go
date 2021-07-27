@@ -1,38 +1,24 @@
+/*
+Copyright © 2021 NAME HERE <EMAIL ADDRESS>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
 package main
 
 import (
-	"GoGameServer/src/global"
-	"GoGameServer/src/service_gs"
-	"GoGameServer/src/service_lg"
-	"fmt"
-	"log"
-	"os"
-	"strconv"
-	"strings"
+	"GoGameServer/src/cmd"
 )
 
-const ProjectName = "GoGameServer"
-
 func main() {
-	if len(os.Args) < 1 {
-		log.Fatal("not enough parameters, please specify the service to start.")
-		return
-	}
-	serviceName := os.Args[1]
-	serviceIdx, err := strconv.Atoi(os.Args[2])
-	if err != nil {
-		serviceIdx = 1
-	}
-	// Init Global Variables
-	global.GlobalInit()
-	switch strings.ToLower(serviceName) {
-	case "game":
-		gs := service_gs.NewGameServer(fmt.Sprintf(serviceName+"_%d", serviceIdx), serviceIdx)
-		gs.Start()
-	case "login":
-		lg := service_lg.NewLoginGate(fmt.Sprintf(serviceName+"_%d", serviceIdx), serviceIdx)
-		lg.Start()
-
-	}
-	fmt.Printf("%s service %s start...", ProjectName, serviceName)
+	cmd.Execute()
 }

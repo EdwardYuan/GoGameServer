@@ -17,7 +17,6 @@ type GameServer struct {
 }
 
 func NewGameServer(_name string, id int) *GameServer {
-	lib.InitLogger()
 	pool, err1 := ants.NewPool(1024)
 	lib.FatalOnError(err1, "NewGameServer Error")
 	lib.SugarLogger.Info("Service ", _name, " created")
@@ -47,13 +46,14 @@ func (gs *GameServer) Stop() {
 }
 
 func (gs *GameServer) Run() {
-	select {
-	case <-gs.CloseChan:
-		gs.Stop()
-	default:
+	for {
+		select {
+		case <-gs.CloseChan:
+			gs.Stop()
+		default:
+		}
+		lib.SugarLogger.Info("Service run")
 	}
-	lib.SugarLogger.Info("Service run")
-
 }
 
 func (gs *GameServer) React(frame []byte, c gnet.Conn) (out []byte, action gnet.Action) {

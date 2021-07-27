@@ -4,6 +4,7 @@ go 1.16
 
 require (
 	github.com/kr/text v0.2.0 // indirect
+	github.com/mitchellh/go-homedir v1.1.0
 	github.com/panjf2000/ants/v2 v2.4.4
 	github.com/panjf2000/gnet v1.4.3
 	github.com/spf13/cobra v1.1.3

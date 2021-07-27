@@ -6,11 +6,11 @@ type ServiceDB struct {
 	*service_common.ServerCommon
 }
 
-func NewServiceDB() *ServiceDB {
+func NewServiceDB(_name string, idx int) *ServiceDB {
 	return &ServiceDB{
 		&service_common.ServerCommon{
-			Name:        "",
-			Id:          0,
+			Name:        _name,
+			Id:          idx,
 			CloseChan:   nil,
 			Rabbit:      nil,
 			SvrTick:     nil,

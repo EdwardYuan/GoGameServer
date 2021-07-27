@@ -35,17 +35,30 @@ func NewLoginGate(_name string, id int) *LoginGate {
 	}
 }
 
-func (lg *LoginGate) Close() {
+func (lg *LoginGate) Stop() {
+	//TODO close channels
+	lib.SugarLogger.Infof("LoginGate %d Closed.", lg.Id)
+}
+
+func (lg *LoginGate) Start() (err error) {
+	lg.run()
+	return nil
+}
+
+func (lg *LoginGate) Run() {
 
 }
 
-func (lg *LoginGate) Start() {
-	lg.run()
+func (lg *LoginGate) LoadConfig(path string) error {
+	return nil
 }
 
 func (lg *LoginGate) run() {
-	select {
-	case <-lg.CloseChan:
-		lg.Close()
+	for {
+		select {
+		case <-lg.CloseChan:
+			lg.Stop()
+		default:
+		}
 	}
 }
