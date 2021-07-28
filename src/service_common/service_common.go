@@ -40,7 +40,9 @@ func (s *ServerCommon) LoadConfig(path string) error {
 	err := viper.ReadInConfig()
 	config.RabbitUrl = viper.GetString("rabbitmq.url")
 	config.GameServerAddr = viper.GetString("gameserver.addr")
+	config.GameServerPort = viper.GetString("gameserver.port")
 	config.LoginGateAddr = viper.GetString("logingate.addr")
+	config.LoginGatePort = viper.GetString("logingate.port")
 	lib.FatalOnError(err, "Load Config Error")
 	return nil
 }

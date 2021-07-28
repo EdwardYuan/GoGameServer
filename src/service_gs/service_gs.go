@@ -33,9 +33,10 @@ func NewGameServer(_name string, id int) *GameServer {
 
 func (gs *GameServer) Start() (err error) {
 	gs.ServerCommon.Start()
-	<-gs.runChannel
 	go gnet.Serve(gs, lib.GNetAddr, gnet.WithMulticore(true), gnet.WithCodec(&lib.MsgCodec{}))
 	lib.SugarLogger.Info("Service ", gs.Name, " Start...")
+	//<-gs.runChannel
+	gs.Run()
 	return
 }
 
@@ -50,10 +51,12 @@ func (gs *GameServer) Run() {
 		select {
 		case <-gs.CloseChan:
 			gs.Stop()
+		case <-gs.runChannel:
+			lib.SugarLogger.Info("running...")
 		default:
 		}
-		lib.SugarLogger.Info("Service run")
 	}
+	lib.SugarLogger.Info("Service run")
 }
 
 func (gs *GameServer) React(frame []byte, c gnet.Conn) (out []byte, action gnet.Action) {

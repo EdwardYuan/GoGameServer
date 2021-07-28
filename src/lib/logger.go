@@ -4,6 +4,7 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"log"
+	"time"
 )
 
 var (
@@ -17,7 +18,17 @@ func init() {
 
 func InitLogger() {
 	Logger, _ = zap.NewProduction()
+	fileName := FormatDateTime(TimeFormat8, time.Now()) + ".log"
+	cfg := zap.NewProductionEncoderConfig()
+	cfg.EncodeTime = zapcore.RFC3339NanoTimeEncoder
+	Logger, _ := zap.Config{
+		Level:         zap.NewAtomicLevelAt(zapcore.DebugLevel),
+		Encoding:      "json",
+		EncoderConfig: cfg,
+		OutputPaths:   []string{"stdout", fileName},
+	}.Build()
 	SugarLogger = Logger.Sugar()
+	Logger.WithOptions()
 }
 
 func SyncLogger() {
@@ -51,4 +62,5 @@ func Log(logLevel zapcore.Level, msg string, err error) {
 	default:
 		SugarLogger.Debugf(msg)
 	}
+	SyncLogger()
 }
