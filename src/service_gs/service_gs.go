@@ -56,7 +56,6 @@ func (gs *GameServer) Run() {
 		default:
 		}
 	}
-	lib.SugarLogger.Info("Service run")
 }
 
 func (gs *GameServer) React(frame []byte, c gnet.Conn) (out []byte, action gnet.Action) {

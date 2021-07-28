@@ -17,7 +17,7 @@ const (
 	TimeFormat8 = "YYYYMMDDHHMMSS"
 )
 
-//FormatDatatime 按照惯例格式参数格式化时间，如YYYY-MM-DD
+//FormatDatetime 按照惯例格式参数格式化时间，如YYYY-MM-DD
 func FormatDateTime(layout string, t time.Time) string {
 	switch strings.ToUpper(layout) {
 	case TimeFormat0:
