@@ -47,7 +47,7 @@ func RunServer(args []string) {
 		fmt.Printf("GoGameServer: parameter error\n")
 		return
 	}
-	Svr.Start()
+	lib.FatalOnError(Svr.Start(), "Start service error")
 	fmt.Printf("%s service %s start...", global.ProjectName, serviceType)
 
 }
