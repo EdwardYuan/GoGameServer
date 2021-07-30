@@ -29,6 +29,7 @@ type ServerCommon struct {
 }
 
 func (s *ServerCommon) Stop() {
+
 	s.Rabbit.Stop()
 }
 

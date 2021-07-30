@@ -39,6 +39,7 @@ func (gs *GameServer) Start() (err error) {
 }
 
 func (gs *GameServer) Stop() {
+	defer gs.workPool.Release()
 	gs.runChannel <- false
 	close(gs.runChannel)
 	lib.SugarLogger.Info("Service ", gs.Name, " Stopped.")
