@@ -2,10 +2,12 @@ package run
 
 import (
 	"GoGameServer/src/global"
+	"GoGameServer/src/lib"
 	"GoGameServer/src/service_common"
 	"GoGameServer/src/service_db"
 	"GoGameServer/src/service_gs"
 	"GoGameServer/src/service_lg"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -18,26 +20,34 @@ func RunServer(args []string) {
 		log.Fatal("not enough parameters, please specify the service to start.")
 		return
 	}
-	serviceName := strings.TrimSpace(os.Args[2])
+	serviceType := strings.ToLower(strings.TrimSpace(os.Args[2]))
 	serviceIdx, err := strconv.Atoi(os.Args[3])
 	if err != nil {
 		serviceIdx = 1
 	}
+	serviceName := fmt.Sprintf(serviceType+"_%d", serviceIdx)
 	// Init Global Variables
 	var Svr service_common.Service
-	global.GlobalInit()
-	switch strings.ToLower(serviceName) {
+	global.Init()
+	addr := lib.GetLocalIP()
+	if addr == "" {
+		lib.FatalOnError(errors.New(""), "get local ip address error")
+	}
+	lib.SugarLogger.Info("IP address: " + addr)
+	global.ServerMap.MapAddrToServerName(lib.GetLocalIP(), serviceType, serviceName)
+
+	switch serviceType {
 	case "game":
-		Svr = service_gs.NewGameServer(fmt.Sprintf(serviceName+"_%d", serviceIdx), serviceIdx)
+		Svr = service_gs.NewGameServer(serviceName, serviceIdx)
 	case "login":
-		Svr = service_lg.NewLoginGate(fmt.Sprintf(serviceName+"_%d", serviceIdx), serviceIdx)
+		Svr = service_lg.NewLoginGate(serviceName, serviceIdx)
 	case "dbserver":
-		Svr = service_db.NewServiceDB(fmt.Sprintf(serviceName+"_%d", serviceIdx), serviceIdx)
+		Svr = service_db.NewServiceDB(serviceName, serviceIdx)
 	default:
 		fmt.Printf("GoGameServer: parameter error\n")
 		return
 	}
 	Svr.Start()
-	fmt.Printf("%s service %s start...", global.ProjectName, serviceName)
+	fmt.Printf("%s service %s start...", global.ProjectName, serviceType)
 
 }

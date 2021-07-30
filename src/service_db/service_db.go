@@ -1,6 +1,11 @@
 package service_db
 
-import "GoGameServer/src/service_common"
+import (
+	"GoGameServer/src/lib"
+	"GoGameServer/src/service_common"
+	"github.com/panjf2000/gnet"
+	"time"
+)
 
 type ServiceDB struct {
 	*service_common.ServerCommon
@@ -8,18 +13,19 @@ type ServiceDB struct {
 
 func NewServiceDB(_name string, idx int) *ServiceDB {
 	return &ServiceDB{
-		&service_common.ServerCommon{
+		ServerCommon: &service_common.ServerCommon{
 			Name:        _name,
 			Id:          idx,
-			CloseChan:   nil,
-			Rabbit:      nil,
-			SvrTick:     nil,
-			EventServer: nil,
+			CloseChan:   make(chan int, 1),
+			Rabbit:      lib.NewRabbitClient(),
+			SvrTick:     time.NewTicker(10 * time.Millisecond),
+			EventServer: &gnet.EventServer{},
 		},
 	}
 }
 
 func (s *ServiceDB) Start() error {
+	s.Run()
 	return nil
 }
 

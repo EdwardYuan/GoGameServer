@@ -8,4 +8,5 @@ var (
 	LoginGatePort  string
 	MySqlUrl       string
 	EtcdUrl        string
+	DBServiceAddr  string
 )

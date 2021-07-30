@@ -20,7 +20,6 @@ func NewGameServer(_name string, id int) *GameServer {
 	pool, err1 := ants.NewPool(1024)
 	lib.FatalOnError(err1, "NewGameServer Error")
 	lib.SugarLogger.Info("Service ", _name, " created")
-
 	return &GameServer{
 		ServerCommon: &service_common.ServerCommon{
 			Name: _name,
@@ -35,7 +34,6 @@ func (gs *GameServer) Start() (err error) {
 	gs.ServerCommon.Start()
 	go gnet.Serve(gs, lib.GNetAddr, gnet.WithMulticore(true), gnet.WithCodec(&lib.MsgCodec{}))
 	lib.SugarLogger.Info("Service ", gs.Name, " Start...")
-	//<-gs.runChannel
 	gs.Run()
 	return
 }

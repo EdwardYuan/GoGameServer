@@ -59,7 +59,9 @@ func (s *ServerCommon) Run() {
 func (s *ServerCommon) Start() {
 	lib.FatalOnError(s.LoadConfig("./config"), "Load Config Error")
 	s.SvrTick = time.NewTicker(time.Duration(time.Millisecond))
-	s.Rabbit = lib.NewRabbitClient()
+	if s.Rabbit == nil {
+		s.Rabbit = lib.NewRabbitClient()
+	}
 	err := s.Rabbit.Start(config.RabbitUrl, "exchange", "queue", "fanout")
 	lib.FatalOnError(err, "Start RabbitMQ Error")
 }
