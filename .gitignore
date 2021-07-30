@@ -7,4 +7,4 @@
 /.github
 *.log
 /bin/GoGameServer
-/bin/*.exe
+/bin/GoGameServer.exe
