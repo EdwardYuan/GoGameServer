@@ -23,7 +23,7 @@ func TestLoginGate_Close(t *testing.T) {
 	for idx, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			lg := service_lg.NewLoginGate(tt.name, idx)
-			lg.StartRabbit()
+			lg.Start()
 		})
 	}
 }

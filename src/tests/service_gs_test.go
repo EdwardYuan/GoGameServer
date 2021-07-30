@@ -27,9 +27,9 @@ func TestGameServer_AddMessageNode(t *testing.T) {
 	}{
 		// TODO: Add test cases.
 	}
-	for _, tt := range tests {
+	for idx, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gs := service_gs.NewGameServer(tt.name)
+			gs := service_gs.NewGameServer(tt.name, idx)
 			gs.Start()
 		})
 	}
@@ -54,9 +54,9 @@ func TestGameServer_React(t *testing.T) {
 	}{
 		// TODO: Add test cases.
 	}
-	for _, tt := range tests {
+	for idx, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gs := service_gs.NewGameServer(tt.name)
+			gs := service_gs.NewGameServer(tt.name, idx)
 			gotOut, gotAction := gs.React(tt.args.frame, tt.args.c)
 			if !reflect.DeepEqual(gotOut, tt.wantOut) {
 				t.Errorf("React() gotOut = %v, want %v", gotOut, tt.wantOut)
@@ -80,9 +80,9 @@ func TestGameServer_Run(t *testing.T) {
 	}{
 		// TODO: Add test cases.
 	}
-	for _, tt := range tests {
+	for idx, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gs := service_gs.NewGameServer(tt.name)
+			gs := service_gs.NewGameServer(tt.name, idx)
 			gs.Start()
 		})
 	}
@@ -101,9 +101,9 @@ func TestGameServer_Start(t *testing.T) {
 	}{
 		// TODO: Add test cases.
 	}
-	for _, tt := range tests {
+	for idx, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gs := service_gs.NewGameServer(tt.name)
+			gs := service_gs.NewGameServer(tt.name, idx)
 			if err := gs.Start(); (err != nil) != tt.wantErr {
 				t.Errorf("Start() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -123,9 +123,9 @@ func TestGameServer_Stop(t *testing.T) {
 	}{
 		// TODO: Add test cases.
 	}
-	for _, tt := range tests {
+	for idx, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gs := service_gs.NewGameServer(tt.name)
+			gs := service_gs.NewGameServer(tt.name, idx)
 			gs.Start()
 
 		})
@@ -143,9 +143,9 @@ func TestNewGameServer(t *testing.T) {
 	}{
 		// TODO: Add test cases.
 	}
-	for _, tt := range tests {
+	for idx, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := service_gs.NewGameServer(tt.args._name); !reflect.DeepEqual(got, tt.want) {
+			if got := service_gs.NewGameServer(tt.args._name, idx); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("NewGameServer() = %v, want %v", got, tt.want)
 			}
 		})
