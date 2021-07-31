@@ -5,6 +5,7 @@ import (
 	"GoGameServer/src/lib"
 	"GoGameServer/src/service_common"
 	"GoGameServer/src/service_db"
+	"GoGameServer/src/service_gate"
 	"GoGameServer/src/service_gs"
 	"GoGameServer/src/service_lg"
 	"errors"
@@ -29,12 +30,12 @@ func RunServer(args []string) {
 	// Init Global Variables
 	var Svr service_common.Service
 	global.Init()
-	addr := lib.GetLocalIP()
+	addr := lib.GetLocalIP(lib.IPv4)
 	if addr == "" {
 		lib.FatalOnError(errors.New(""), "get local ip address error")
 	}
 	lib.SugarLogger.Info("IP address: " + addr)
-	global.ServerMap.MapAddrToServerName(lib.GetLocalIP(), serviceType, serviceName)
+	global.ServerMap.MapAddrToServerName(lib.GetLocalIP(lib.IPv4), serviceType, serviceName)
 
 	switch serviceType {
 	case "game":
@@ -43,6 +44,8 @@ func RunServer(args []string) {
 		Svr = service_lg.NewLoginGate(serviceName, serviceIdx)
 	case "dbserver":
 		Svr = service_db.NewServiceDB(serviceName, serviceIdx)
+	case "gate":
+		Svr = service_gate.NewServiceGate(serviceName, serviceIdx)
 	default:
 		fmt.Printf("GoGameServer: parameter error\n")
 		return
