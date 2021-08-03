@@ -32,7 +32,8 @@ func NewGameServer(_name string, id int) *GameServer {
 
 func (gs *GameServer) Start() (err error) {
 	gs.ServerCommon.Start()
-	err = gnet.Serve(gs, lib.GNetAddr, gnet.WithMulticore(true), gnet.WithCodec(&lib.MsgCodec{}))
+	err = gnet.Serve(gs, lib.GNetAddr, gnet.WithMulticore(true), gnet.WithCodec(&lib.MsgCodec{}),
+		gnet.WithLogger(lib.SugarLogger))
 	lib.SugarLogger.Info("Service ", gs.Name, " Start...")
 	gs.Run()
 	return
