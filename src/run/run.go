@@ -29,7 +29,7 @@ func RunServer(args []string) {
 	serviceName := fmt.Sprintf(serviceType+"_%d", serviceIdx)
 	// Init Global Variables
 	var Svr service_common.Service
-	global.Init()
+	global.Init(serviceName)
 	addr := lib.GetLocalIP(lib.IPv4)
 	if addr == "" {
 		lib.FatalOnError(errors.New(""), "get local ip address error")

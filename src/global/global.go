@@ -1,5 +1,7 @@
 package global
 
+import "GoGameServer/src/lib"
+
 const ProjectName = "GoGameServer"
 
 var serviceString map[string]ServerType
@@ -14,7 +16,8 @@ func makeSvcStringMap() {
 
 }
 
-func Init() {
+func Init(svrName string) {
+	lib.InitLogger(svrName)
 	makeSvcStringMap()
 	ServerMap = NewServerMapAddress()
 }

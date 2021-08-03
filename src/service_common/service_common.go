@@ -29,7 +29,6 @@ type ServerCommon struct {
 }
 
 func (s *ServerCommon) Stop() {
-
 	s.Rabbit.Stop()
 }
 
@@ -51,7 +50,11 @@ func (s *ServerCommon) LoadConfig(path string) error {
 func (s *ServerCommon) Run() {
 	select {
 	case <-s.SvrTick.C:
-		s.Rabbit.SimpleConsume("queue", "")
+		ch, err := s.Rabbit.SimpleConsume("queue", "")
+		if ch != nil && err == nil {
+			msg := <-ch
+			lib.Log(zapcore.DebugLevel, string(msg.Body), err)
+		}
 	case <-s.CloseChan:
 		s.Stop()
 	}
@@ -65,6 +68,7 @@ func (s *ServerCommon) Start() {
 	}
 	err := s.Rabbit.Start(config.RabbitUrl, "exchange", "queue", "fanout")
 	lib.FatalOnError(err, "Start RabbitMQ Error")
+	s.Run()
 }
 
 func (s *ServerCommon) React(frame []byte, c gnet.Conn) (out []byte, action gnet.Action) {

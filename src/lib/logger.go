@@ -12,13 +12,9 @@ var (
 	SugarLogger *zap.SugaredLogger
 )
 
-func init() {
-	InitLogger()
-}
-
-func InitLogger() {
+func InitLogger(serviceName string) {
 	Logger, _ = zap.NewProduction()
-	fileName := FormatDateTime(TimeFormat8, time.Now()) + ".log"
+	fileName := serviceName + "_" + FormatDateTime(TimeFormat8, time.Now()) + ".log"
 	cfg := zap.NewProductionEncoderConfig()
 	cfg.EncodeTime = zapcore.RFC3339NanoTimeEncoder
 	Logger, _ := zap.Config{

@@ -1,12 +1,10 @@
 package service_lg
 
 import (
-	"GoGameServer/src/config"
 	"GoGameServer/src/lib"
 	"GoGameServer/src/service_common"
 	"github.com/panjf2000/ants/v2"
 	"github.com/panjf2000/gnet"
-	"net"
 )
 
 const DefaultPoolSize = 1024
@@ -40,18 +38,19 @@ func (lg *LoginGate) Stop() {
 }
 
 func (lg *LoginGate) Start() (err error) {
-	conn, err := net.Dial("tcp", config.GameServerAddr+config.GameServerPort)
-	lib.FatalOnError(err, "logingate connect to gameserver error")
-	if conn != nil {
-		conn.Write([]byte("Hello GameServer."))
-	}
-	defer conn.Close()
-	lg.run()
+	lg.ServerCommon.Start()
+	//conn, err := net.Dial("tcp", config.GameServerAddr+config.GameServerPort)
+	//lib.FatalOnError(err, "logingate connect to gameserver error")
+	//if conn != nil {
+	//	conn.Write([]byte("Hello GameServer."))
+	//}
+	//defer conn.Close()
+	lg.Run()
 	return err
 }
 
 func (lg *LoginGate) Run() {
-
+	lg.run()
 }
 
 func (lg *LoginGate) LoadConfig(path string) error {
