@@ -3,6 +3,7 @@ package global
 import "GoGameServer/src/lib"
 
 const ProjectName = "GoGameServer"
+const DefaultPoolSize = 1024
 
 var serviceString map[string]ServerType
 var ServerMap *ServerMapAddress

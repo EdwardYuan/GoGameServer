@@ -1,8 +1,11 @@
 <component name="ProjectDictionaryState">
   <dictionary name="Edward">
     <words>
+      <w>dbserver</w>
       <w>gnet</w>
       <w>rabbitmq</w>
+      <w>yyyymmdd</w>
+      <w>yyyymmddhhmmss</w>
     </words>
   </dictionary>
 </component>

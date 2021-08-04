@@ -1,7 +1,6 @@
 package service_db
 
 import (
-	"GoGameServer/src/lib"
 	"GoGameServer/src/service_common"
 	"github.com/panjf2000/gnet"
 	"time"
@@ -17,7 +16,6 @@ func NewServiceDB(_name string, idx int) *ServiceDB {
 			Name:        _name,
 			Id:          idx,
 			CloseChan:   make(chan int, 1),
-			Rabbit:      lib.NewRabbitClient(),
 			SvrTick:     time.NewTicker(10 * time.Millisecond),
 			EventServer: &gnet.EventServer{},
 		},

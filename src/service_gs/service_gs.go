@@ -2,6 +2,7 @@ package service_gs
 
 import (
 	"GoGameServer/src/MsgHandler"
+	"GoGameServer/src/global"
 	"GoGameServer/src/lib"
 	"GoGameServer/src/protocol"
 	"GoGameServer/src/service_common"
@@ -17,7 +18,7 @@ type GameServer struct {
 }
 
 func NewGameServer(_name string, id int) *GameServer {
-	pool, err1 := ants.NewPool(1024)
+	pool, err1 := ants.NewPool(global.DefaultPoolSize)
 	lib.FatalOnError(err1, "NewGameServer Error")
 	lib.SugarLogger.Info("Service ", _name, " created")
 	return &GameServer{
@@ -40,9 +41,11 @@ func (gs *GameServer) Start() (err error) {
 }
 
 func (gs *GameServer) Stop() {
-	defer gs.workPool.Release()
+	defer func() {
+		gs.workPool.Release()
+		close(gs.runChannel)
+	}()
 	gs.runChannel <- false
-	close(gs.runChannel)
 	lib.SugarLogger.Info("Service ", gs.Name, " Stopped.")
 }
 

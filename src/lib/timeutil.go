@@ -15,6 +15,7 @@ const (
 	TimeFormat6 = "HH:MM"
 	TimeFormat7 = "YYYY-MM-DD-HHMMSS"
 	TimeFormat8 = "YYYYMMDDHHMMSS"
+	TimeFormat9 = "YYYYMMDD"
 )
 
 //FormatDatetime 按照惯例格式参数格式化时间，如YYYY-MM-DD
@@ -38,6 +39,8 @@ func FormatDateTime(layout string, t time.Time) string {
 		return t.Format("2006-01-02 150405")
 	case TimeFormat8:
 		return t.Format("20060102150405")
+	case TimeFormat9:
+		return t.Format("20060102")
 	default:
 		return t.Format("2006-01-02 15:04:05")
 	}

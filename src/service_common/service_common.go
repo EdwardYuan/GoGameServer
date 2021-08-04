@@ -23,13 +23,11 @@ type ServerCommon struct {
 	Name      string
 	Id        int
 	CloseChan chan int
-	Rabbit    *lib.RabbitClient
 	SvrTick   *time.Ticker
 	*gnet.EventServer
 }
 
 func (s *ServerCommon) Stop() {
-	s.Rabbit.Stop()
 }
 
 func (s *ServerCommon) LoadConfig(path string) error {
@@ -47,28 +45,9 @@ func (s *ServerCommon) LoadConfig(path string) error {
 	return nil
 }
 
-func (s *ServerCommon) Run() {
-	select {
-	case <-s.SvrTick.C:
-		ch, err := s.Rabbit.SimpleConsume("queue", "")
-		if ch != nil && err == nil {
-			msg := <-ch
-			lib.Log(zapcore.DebugLevel, string(msg.Body), err)
-		}
-	case <-s.CloseChan:
-		s.Stop()
-	}
-}
-
 func (s *ServerCommon) Start() {
 	lib.FatalOnError(s.LoadConfig("./config"), "Load Config Error")
 	s.SvrTick = time.NewTicker(time.Duration(time.Millisecond))
-	if s.Rabbit == nil {
-		s.Rabbit = lib.NewRabbitClient()
-	}
-	err := s.Rabbit.Start(config.RabbitUrl, "exchange", "queue", "fanout")
-	lib.FatalOnError(err, "Start RabbitMQ Error")
-	s.Run()
 }
 
 func (s *ServerCommon) React(frame []byte, c gnet.Conn) (out []byte, action gnet.Action) {
