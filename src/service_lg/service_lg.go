@@ -4,10 +4,15 @@ import (
 	"GoGameServer/src/config"
 	"GoGameServer/src/global"
 	"GoGameServer/src/lib"
+	"GoGameServer/src/pb"
 	"GoGameServer/src/service_common"
+	"encoding/json"
+	"fmt"
 	"github.com/panjf2000/ants/v2"
 	"github.com/panjf2000/gnet"
+	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"google.golang.org/protobuf/proto"
 )
 
 type LoginGate struct {
@@ -64,7 +69,27 @@ func (lg *LoginGate) Run() {
 				ch, err := lg.Rabbit.SimpleConsume("queue", "")
 				if ch != nil && err == nil {
 					msg := <-ch
-					lib.Log(zapcore.DebugLevel, string(msg.Body), err)
+					switch msg.ContentType {
+					case "json":
+						type Person struct {
+							Id    int
+							Name  string
+							Email string
+						}
+						var p Person
+						if err := json.Unmarshal(msg.Body, &p); err != nil {
+							lib.Log(zapcore.DebugLevel, "json unmarshal msg error", err)
+						}
+						lib.Log(zapcore.DebugLevel, fmt.Sprintln(p), err)
+					case "protobuf":
+						var p1 pb.Person
+						if err := proto.Unmarshal(msg.Body, &p1); err != nil {
+							lib.Log(zapcore.DebugLevel, "proto unmarshal msg error", err)
+						}
+						lib.Log(zapcore.DebugLevel, fmt.Sprintln(p1), err)
+					default:
+						lib.Log(zap.DebugLevel, "nothing", nil)
+					}
 				}
 			}()
 		case <-lg.CloseChan:
