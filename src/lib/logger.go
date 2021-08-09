@@ -14,7 +14,7 @@ var (
 
 func InitLogger(serviceName string) {
 	Logger, _ = zap.NewProduction()
-	fileName := serviceName + "_" + FormatDateTime(TimeFormat9, time.Now()) + ".log"
+	fileName := "log/" + serviceName + "_" + FormatDateTime(TimeFormat9, time.Now()) + ".log"
 	cfg := zap.NewProductionEncoderConfig()
 	cfg.EncodeTime = zapcore.RFC3339NanoTimeEncoder
 	Logger, _ := zap.Config{
