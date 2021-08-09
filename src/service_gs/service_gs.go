@@ -8,11 +8,13 @@ import (
 	"GoGameServer/src/service_common"
 	"github.com/panjf2000/ants/v2"
 	"github.com/panjf2000/gnet"
+	"sync"
 )
 
 type GameServer struct {
 	runChannel chan bool
 	*service_common.ServerCommon
+	wg           sync.WaitGroup
 	workPool     *ants.Pool
 	protoFactory *protocol.Factory
 }
@@ -26,6 +28,7 @@ func NewGameServer(_name string, id int) *GameServer {
 			Name: _name,
 			Id:   id,
 		},
+		wg:         sync.WaitGroup{},
 		runChannel: make(chan bool),
 		workPool:   pool,
 	}
@@ -45,6 +48,7 @@ func (gs *GameServer) Stop() {
 		gs.workPool.Release()
 		close(gs.runChannel)
 	}()
+	gs.wg.Wait()
 	gs.runChannel <- false
 	lib.SugarLogger.Info("Service ", gs.Name, " Stopped.")
 }
@@ -70,7 +74,9 @@ func (gs *GameServer) React(frame []byte, c gnet.Conn) (out []byte, action gnet.
 }
 
 func (gs *GameServer) AddMessageNode(msg *MsgHandler.Message) {
+	gs.wg.Add(1)
 	gs.workPool.Submit(func() {
+		defer gs.wg.Done()
 
 	})
 }
