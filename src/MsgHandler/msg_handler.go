@@ -8,6 +8,8 @@ import (
 
 const (
 	READ_MESSAGE_INIT_LENGTH = 1024
+	MESSAGE_COMMAND_INDEX = 5
+	MESSAGE_FLAG_INDEX = 9
 )
 
 // TODO
@@ -72,8 +74,8 @@ func (head *MessageHead) Encode(buf []byte) {
 
 func (head *MessageHead) Decode(buf []byte) {
 	head.flag = MessageFlag(buf[0])
-	head.command = binary.BigEndian.Uint32(buf[1:5])
-	head.bodyLength = binary.BigEndian.Uint32(buf[5:9])
+	head.command = binary.BigEndian.Uint32(buf[1:MESSAGE_COMMAND_INDEX])
+	head.bodyLength = binary.BigEndian.Uint32(buf[MESSAGE_COMMAND_INDEX:MESSAGE_FLAG_INDEX])
 }
 
 func (head *MessageHead) Check() (err error){
