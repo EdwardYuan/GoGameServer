@@ -76,9 +76,14 @@ func (head *MessageHead) Decode(buf []byte) {
 	head.bodyLength = binary.BigEndian.Uint32(buf[5:9])
 }
 
-func (head *MessageHead) Check() error{
+func (head *MessageHead) Check() (err error){
 	// TODO check flag, command, head length and body length
-	return nil
+	err = head.crc()
+	return
+}
+
+func (head *MessageHead) crc() (err error){
+	return
 }
 
 //接收和发送的消息结构
