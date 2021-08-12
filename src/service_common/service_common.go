@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/panjf2000/gnet"
 	"github.com/spf13/viper"
+	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"time"
 )
@@ -51,12 +52,13 @@ func (s *ServerCommon) Start() {
 }
 
 func (s *ServerCommon) React(frame []byte, c gnet.Conn) (out []byte, action gnet.Action) {
-	msg, err := s.Decode(frame)
+	msg, err := s.Decode(frame)   // 从[]byte解析出Message消息，之后分发给相应的服务
 	lib.Log(zapcore.DebugLevel, "gnet receive message", err)
 	fmt.Println(msg) // to remove
 	switch global.ServerMap.GetSvrTypeByAddr(c.RemoteAddr().String()) {
 	case global.ServerDatabase:
 	case global.ServerGame:
+
 	case global.ServerGate:
 
 	case global.ServerLogin:
@@ -66,13 +68,16 @@ func (s *ServerCommon) React(frame []byte, c gnet.Conn) (out []byte, action gnet
 	return
 }
 
-func (s *ServerCommon) Encode(msg MsgHandler.Message) (err error) {
-	//TODO protobuf marshal
+func (s *ServerCommon) Encode(msg MsgHandler.Message) (data []byte, err error) {
 	return
 }
 
 func (s *ServerCommon) Decode(data []byte) (msg MsgHandler.Message, err error) {
-	//TODO protobuf unmarshal
+	head := MsgHandler.NewMessageHead()
+	head.Decode(data)
+	err = head.Check()
+
+	lib.Log(zap.ErrorLevel, "Decode Message Data Error: ", err)
 	return
 }
 

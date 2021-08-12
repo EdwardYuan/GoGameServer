@@ -16,6 +16,11 @@ type Session struct {
 	con net.Conn
 }
 
+type IMessageHandler interface {
+	Encode(msg Message) (data []byte, err error)
+	Decode(data []byte) (msg Message, err error)
+}
+
 type IMessageReader interface {
 }
 
@@ -71,17 +76,20 @@ func (head *MessageHead) Decode(buf []byte) {
 	head.bodyLength = binary.BigEndian.Uint32(buf[5:9])
 }
 
+func (head *MessageHead) Check() error{
+	// TODO check flag, command, head length and body length
+	return nil
+}
+
 //接收和发送的消息结构
 type Message struct {
 	Flag      MessageFlag //标志位
 	Command   uint32      //消息类型
 	SessionId uint64      //会话
 	Data      []byte
-	//pool       *sync.Pool TODO 内存池优化
 }
 
 func newMessage(session *Session, flag MessageFlag, command uint32, data []byte) *Message {
-	//TODO 从内存池中拿取对象减少内存分配
 	message := &Message{}
 	message.Flag = flag
 	message.Command = command
@@ -101,7 +109,7 @@ func newMessageHead(buf []byte, len int) *MessageHead {
 
 func (mh *MessageHeadReader) ReadMessage(session *Session) IMessageReader {
 	if mh.Offset < mh.Head.headerLength {
-		//ead Head
+		//Read Head
 		readNum, err := session.con.Read(mh.Data[mh.Offset:mh.Head.headerLength])
 		if err != nil {
 			lib.SugarLogger.Errorf("MessageHeadReader ReadMessage err: %+v", err)
@@ -121,7 +129,7 @@ func (mh *MessageHeadReader) ReadMessage(session *Session) IMessageReader {
 			lib.SugarLogger.Errorf("MessageHeadReader ReadMessage Err: too big data.")
 			return nil
 		}
-		// ead body
+		// Read body
 		if mh.Offset < mh.Head.headerLength+mh.Head.bodyLength {
 			readNum, err := session.con.Read(mh.Data[mh.Offset : mh.Head.headerLength+mh.Head.bodyLength])
 			if err != nil {
