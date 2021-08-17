@@ -42,7 +42,7 @@ func FormatDateTime(layout string, t time.Time) string {
 	case TimeFormat9:
 		return t.Format("20060102")
 	default:
-		return t.Format("2006-01-02 15:04:05")
+		return t.Format(layout) // layout 使用time包的const定义, e.g. RFC3339 etc.
 	}
 
 }
