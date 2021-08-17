@@ -1,10 +1,11 @@
 package lib
 
 import (
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 	"log"
 	"time"
+
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 var (
@@ -17,12 +18,15 @@ func InitLogger(serviceName string) {
 	fileName := "log/" + serviceName + "_" + FormatDateTime(TimeFormat9, time.Now()) + ".log"
 	cfg := zap.NewProductionEncoderConfig()
 	cfg.EncodeTime = zapcore.RFC3339NanoTimeEncoder
-	Logger, _ := zap.Config{
+	Logger, err := zap.Config{
 		Level:         zap.NewAtomicLevelAt(zapcore.DebugLevel),
 		Encoding:      "json",
 		EncoderConfig: cfg,
 		OutputPaths:   []string{"stdout", fileName},
 	}.Build()
+	if err != nil {
+		log.Fatal("InitLogger Error:", err)
+	}
 	SugarLogger = Logger.Sugar()
 	Logger.WithOptions()
 }
