@@ -10,7 +10,7 @@
             "request": "launch",
             "mode": "auto",
             "args": ["run","game", "0"],
-            "output": "${workspaceFolder}/bin",
+            "output": "${workspaceFolder}/bin/GoGameServer",
             "cwd": "${workspaceFolder}/bin",
             "program": "${workspaceFolder}/src/main"
         },
@@ -21,7 +21,7 @@
             "request": "launch",
             "mode": "auto",
             "args": ["run","login", "0"],
-            "output": "${workspaceFolder}/bin",
+            "output": "${workspaceFolder}/bin/GoGameServer",
             "cwd": "${workspaceFolder}/bin",
             "program": "${workspaceFolder}/src/main"
         }
