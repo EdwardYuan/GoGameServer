@@ -36,6 +36,14 @@ func NewLoginGate(_name string, id int) *LoginGate {
 	}
 }
 
+func (lg *LoginGate) Error() string {
+	if lg.err != nil {
+		lib.SugarLogger.Error(lg.err)
+		return "LoginGate Error"
+	}
+	return ""
+}
+
 func (lg *LoginGate) Stop() {
 	//TODO close channels
 	lg.Rabbit.Stop()
@@ -84,7 +92,7 @@ func (lg *LoginGate) Run() {
 						if err := proto.Unmarshal(msg.Body, &p1); err != nil {
 							lib.Log(zapcore.DebugLevel, "proto unmarshal msg error", err)
 						}
-						lib.Log(zapcore.DebugLevel, fmt.Sprintln(p1), err)
+						lib.Log(zapcore.DebugLevel, fmt.Sprintln(&p1), err)
 					default:
 						lib.Log(zap.DebugLevel, "nothing", nil)
 					}

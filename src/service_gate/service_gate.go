@@ -10,6 +10,7 @@ import (
 )
 
 type ServiceGate struct {
+	err      error
 	workPool *ants.Pool
 	wg       sync.WaitGroup
 	*service_common.ServerCommon
@@ -29,6 +30,14 @@ func NewServiceGate(_name string, id int) *ServiceGate {
 		},
 		EventServer: new(gnet.EventServer),
 	}
+}
+
+func (s *ServiceGate) Error() string {
+	if s.err != nil {
+		lib.SugarLogger.Error(s.err)
+		return "GameGate Error"
+	}
+	return ""
 }
 
 func (s *ServiceGate) Start() (err error) {
@@ -70,7 +79,6 @@ func (s *ServiceGate) Run() {
 		case <-s.CloseChan:
 			close(s.runChan)
 			close(s.CloseChan)
-		default:
 		}
 	}
 }
