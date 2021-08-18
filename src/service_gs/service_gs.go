@@ -47,7 +47,6 @@ func (gs *GameServer) Run() {
 			gs.Stop()
 		case <-gs.runChannel:
 			lib.SugarLogger.Info("running...")
-		default:
 		}
 	}
 }
