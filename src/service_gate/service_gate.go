@@ -1,29 +1,78 @@
 package service_gate
 
-import "GoGameServer/src/service_common"
+import (
+	"GoGameServer/src/lib"
+	"GoGameServer/src/service_common"
+	"sync"
+
+	"github.com/panjf2000/ants/v2"
+	"github.com/panjf2000/gnet"
+)
 
 type ServiceGate struct {
+	workPool *ants.Pool
+	wg       sync.WaitGroup
 	*service_common.ServerCommon
+	runChan chan bool
+	*gnet.EventServer
 }
 
 func NewServiceGate(_name string, id int) *ServiceGate {
-	return &ServiceGate{ServerCommon: &service_common.ServerCommon{
-		Name: _name,
-		Id:   id,
-	},
+	pool, err := ants.NewPool(ants.DefaultAntsPoolSize)
+	lib.SysLoggerFatal(err, "New Gate pool error")
+	return &ServiceGate{
+		workPool: pool,
+		wg:       sync.WaitGroup{},
+		ServerCommon: &service_common.ServerCommon{
+			Name: _name,
+			Id:   id,
+		},
+		EventServer: new(gnet.EventServer),
 	}
 }
 
 func (s *ServiceGate) Start() (err error) {
+	lib.SugarLogger.Info("Service Gate Start: ", s.Name, s.Id)
+	go func(gg *ServiceGate) {
+		gnet.Serve(gg, lib.GNetAddr, gnet.WithMulticore(true), gnet.WithCodec(&lib.MsgCodec{}), gnet.WithLogger(lib.SugarLogger))
+	}(s)
+	s.Run()
+	return
+}
+
+func (s *ServiceGate) React(frame []byte, c gnet.Conn) (out []byte, action gnet.Action) {
+	// lib.Log(zap.DebugLevel, string(frame), nil)
+	if s.workPool != nil {
+		s.wg.Add(1)
+		s.workPool.Submit(func() {
+			lib.SugarLogger.Info(string(frame))
+			s.wg.Done()
+		})
+	}
+	// msg, err := s.Decode(frame)
+	// if err != nil {
+	// }
 	return
 }
 
 func (s *ServiceGate) Stop() {
-
+	defer func() {
+		s.workPool.Release()
+	}()
+	s.wg.Wait()
 }
 
 func (s *ServiceGate) Run() {
-
+	for {
+		select {
+		case <-s.runChan:
+			lib.SugarLogger.Info("running")
+		case <-s.CloseChan:
+			close(s.runChan)
+			close(s.CloseChan)
+		default:
+		}
+	}
 }
 
 func (s *ServiceGate) LoadConfig(path string) error {

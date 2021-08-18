@@ -25,6 +25,16 @@
             "cwd": "${workspaceFolder}/bin",
             "program": "${workspaceFolder}/src/main"
         },
+        {
+            "name": "GameGate",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "args": ["run","gate", "0"],
+            "output": "${workspaceFolder}/bin/GoGameServer",
+            "cwd": "${workspaceFolder}/bin",
+            "program": "${workspaceFolder}/src/main"
+        },
         
     ],
     
