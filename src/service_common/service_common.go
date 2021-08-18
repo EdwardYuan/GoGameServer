@@ -3,14 +3,11 @@ package service_common
 import (
 	"GoGameServer/src/MsgHandler"
 	"GoGameServer/src/config"
-	"GoGameServer/src/global"
 	"GoGameServer/src/lib"
-	"fmt"
-	"github.com/panjf2000/gnet"
+	"time"
+
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
-	"time"
 )
 
 type Service interface {
@@ -25,7 +22,6 @@ type ServerCommon struct {
 	Id        int
 	CloseChan chan int
 	SvrTick   *time.Ticker
-	*gnet.EventServer
 }
 
 func (s *ServerCommon) Stop() {
@@ -49,23 +45,6 @@ func (s *ServerCommon) LoadConfig(path string) error {
 func (s *ServerCommon) Start() {
 	lib.FatalOnError(s.LoadConfig("./config"), "Load Config Error")
 	s.SvrTick = time.NewTicker(time.Duration(time.Millisecond))
-}
-
-func (s *ServerCommon) React(frame []byte, c gnet.Conn) (out []byte, action gnet.Action) {
-	msg, err := s.Decode(frame)   // 从[]byte解析出Message消息，之后分发给相应的服务
-	lib.Log(zapcore.DebugLevel, "gnet receive message", err)
-	fmt.Println(msg) // to remove
-	switch global.ServerMap.GetSvrTypeByAddr(c.RemoteAddr().String()) {
-	case global.ServerDatabase:
-	case global.ServerGame:
-
-	case global.ServerGate:
-
-	case global.ServerLogin:
-	default:
-
-	}
-	return
 }
 
 func (s *ServerCommon) Encode(msg MsgHandler.Message) (data []byte, err error) {

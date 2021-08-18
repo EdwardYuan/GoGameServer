@@ -8,8 +8,8 @@ import (
 	"GoGameServer/src/service_common"
 	"encoding/json"
 	"fmt"
+
 	"github.com/panjf2000/ants/v2"
-	"github.com/panjf2000/gnet"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"google.golang.org/protobuf/proto"
@@ -23,15 +23,13 @@ type LoginGate struct {
 }
 
 func NewLoginGate(_name string, id int) *LoginGate {
-	eventSvr := gnet.EventServer{}
 	pool, err := ants.NewPool(global.DefaultPoolSize)
 	lib.FatalOnError(err, "LoginGate Make Pool Error")
 	return &LoginGate{
 		ServerCommon: &service_common.ServerCommon{
-			Name:        _name,
-			Id:          id,
-			EventServer: &eventSvr,
-			CloseChan:   make(chan int),
+			Name:      _name,
+			Id:        id,
+			CloseChan: make(chan int),
 		},
 		workPool: pool,
 		Rabbit:   lib.NewRabbitClient(),

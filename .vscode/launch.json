@@ -24,7 +24,8 @@
             "output": "${workspaceFolder}/bin/GoGameServer",
             "cwd": "${workspaceFolder}/bin",
             "program": "${workspaceFolder}/src/main"
-        }
+        },
+        
     ],
     
 }

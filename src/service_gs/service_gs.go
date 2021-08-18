@@ -6,9 +6,11 @@ import (
 	"GoGameServer/src/lib"
 	"GoGameServer/src/protocol"
 	"GoGameServer/src/service_common"
+	"sync"
+
 	"github.com/panjf2000/ants/v2"
 	"github.com/panjf2000/gnet"
-	"sync"
+	"go.uber.org/zap"
 )
 
 type GameServer struct {
@@ -17,6 +19,7 @@ type GameServer struct {
 	wg           sync.WaitGroup
 	workPool     *ants.Pool
 	protoFactory *protocol.Factory
+	*gnet.EventServer
 }
 
 func NewGameServer(_name string, id int) *GameServer {
@@ -28,16 +31,20 @@ func NewGameServer(_name string, id int) *GameServer {
 			Name: _name,
 			Id:   id,
 		},
-		wg:         sync.WaitGroup{},
-		runChannel: make(chan bool),
-		workPool:   pool,
+		wg:          sync.WaitGroup{},
+		runChannel:  make(chan bool),
+		workPool:    pool,
+		EventServer: new(gnet.EventServer),
 	}
 }
 
 func (gs *GameServer) Start() (err error) {
 	gs.ServerCommon.Start()
-	err = gnet.Serve(gs, lib.GNetAddr, gnet.WithMulticore(true), gnet.WithCodec(&lib.MsgCodec{}),
-		gnet.WithLogger(lib.SugarLogger))
+	go func(g *GameServer) {
+		err := gnet.Serve(g, lib.GNetAddr, gnet.WithMulticore(true), gnet.WithCodec(&lib.MsgCodec{}),
+			gnet.WithLogger(lib.SugarLogger))
+		lib.SysLoggerFatal(err, g.Name+"gnet serve")
+	}(gs)
 	lib.SugarLogger.Info("Service ", gs.Name, " Start...")
 	gs.Run()
 	return
@@ -66,6 +73,8 @@ func (gs *GameServer) Run() {
 }
 
 func (gs *GameServer) React(frame []byte, c gnet.Conn) (out []byte, action gnet.Action) {
+	lib.Log(zap.DebugLevel, string(frame), nil)
+	return
 	msg, err := gs.Decode(frame)
 	if err != nil {
 		gs.AddMessageNode(&msg)
