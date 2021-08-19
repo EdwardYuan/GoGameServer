@@ -1,7 +1,6 @@
 package service_common
 
 import (
-	"GoGameServer/src/MsgHandler"
 	"GoGameServer/src/config"
 	"GoGameServer/src/lib"
 	"time"
@@ -47,12 +46,12 @@ func (s *ServerCommon) Start() {
 	s.SvrTick = time.NewTicker(time.Duration(time.Millisecond))
 }
 
-func (s *ServerCommon) Encode(msg MsgHandler.Message) (data []byte, err error) {
+func (s *ServerCommon) Encode(msg lib.Message) (data []byte, err error) {
 	return
 }
 
-func (s *ServerCommon) Decode(data []byte) (msg MsgHandler.Message, err error) {
-	head := MsgHandler.NewMessageHead()
+func (s *ServerCommon) Decode(data []byte) (msg lib.Message, err error) {
+	head := lib.NewMessageHead()
 	head.Decode(data)
 	err = head.Check()
 
@@ -60,6 +59,6 @@ func (s *ServerCommon) Decode(data []byte) (msg MsgHandler.Message, err error) {
 	return
 }
 
-func (s *ServerCommon) HandleMessage(msg MsgHandler.Message) {
+func (s *ServerCommon) HandleMessage(msg lib.Message) {
 
 }

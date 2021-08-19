@@ -43,7 +43,8 @@ func (s *ServiceGate) Error() string {
 func (s *ServiceGate) Start() (err error) {
 	lib.SugarLogger.Info("Service Gate Start: ", s.Name, s.Id)
 	go func(gg *ServiceGate) {
-		gnet.Serve(gg, lib.GNetAddr, gnet.WithMulticore(true), gnet.WithCodec(&lib.MsgCodec{}), gnet.WithLogger(lib.SugarLogger))
+		gnet.Serve(gg, lib.GNetAddr, gnet.WithMulticore(true), gnet.WithCodec(gnet.NewFixedLengthFrameCodec(5)), // gnet.WithCodec(&lib.MsgCodec{}),
+			gnet.WithLogger(lib.SugarLogger))
 	}(s)
 	s.Run()
 	return
@@ -51,6 +52,7 @@ func (s *ServiceGate) Start() (err error) {
 
 func (s *ServiceGate) React(frame []byte, c gnet.Conn) (out []byte, action gnet.Action) {
 	// lib.Log(zap.DebugLevel, string(frame), nil)
+
 	if s.workPool != nil {
 		s.wg.Add(1)
 		s.workPool.Submit(func() {
@@ -58,9 +60,7 @@ func (s *ServiceGate) React(frame []byte, c gnet.Conn) (out []byte, action gnet.
 			s.wg.Done()
 		})
 	}
-	// msg, err := s.Decode(frame)
-	// if err != nil {
-	// }
+
 	return
 }
 
