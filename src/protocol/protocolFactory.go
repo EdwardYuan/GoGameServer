@@ -1,6 +1,6 @@
 package protocol
 
-import "GoGameServer/src/MsgHandler"
+import "GoGameServer/src/lib"
 
 // ProtocolFactory
 type Factory struct {
@@ -10,7 +10,7 @@ type Factory struct {
 type Session struct {
 }
 
-func (s *Session) Decode(msg MsgHandler.Message) {
+func (s *Session) Decode(msg lib.Message) {
 
 }
 

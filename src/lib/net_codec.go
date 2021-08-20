@@ -35,7 +35,7 @@ func (mc *MsgCodec) Decode(c gnet.Conn) ([]byte, error) {
 	}
 	head.Decode(buf)
 	if (head.BodyLength == 0) || (head.BodyLength > MaxMessageBodySize) {
-		return nil, nil
+		return nil, errors.New("head.bodylength is zero or too large")
 	}
 	// 校验包头完成，读取包体
 	bodySize, data := c.ReadN(int(head.BodyLength))

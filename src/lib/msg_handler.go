@@ -106,15 +106,6 @@ func newMessage(session *Session, flag MessageFlag, command uint32, data []byte)
 	return message
 }
 
-func newMessageHead(buf []byte, len int) *MessageHead {
-	return &MessageHead{
-		Flag:         0,
-		Command:      0,
-		BodyLength:   0,
-		HeaderLength: 9,
-	}
-}
-
 func (mh *MessageHeadReader) ReadMessage(session *Session) IMessageReader {
 	if mh.Offset < mh.Head.HeaderLength {
 		//Read Head
