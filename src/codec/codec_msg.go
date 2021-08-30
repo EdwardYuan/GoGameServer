@@ -1,6 +1,7 @@
-package lib
+package codec
 
 import (
+	"GoGameServer/src/lib"
 	"errors"
 
 	"github.com/panjf2000/gnet"
@@ -18,12 +19,12 @@ func (mc *MsgCodec) Encode(c gnet.Conn, buf []byte) ([]byte, error) {
 // Decode decodes frames from TCP stream via specific implementation.
 // 读取一个完整的消息包；处理组包问题
 func (mc *MsgCodec) Decode(c gnet.Conn) ([]byte, error) {
-	size, buf := c.ReadN(ReadMessageInitLength)
+	size, buf := c.ReadN(lib.ReadMessageInitLength)
 	if size == 0 {
 		return nil, errors.New("")
 	}
 	c.ShiftN(size)
-	head := NewMessageHead()
+	head := lib.NewMessageHead()
 	if size < int(head.HeaderLength) {
 		// Continue Read
 		size, buf1 := c.ReadN(int(head.HeaderLength) - size)
@@ -34,7 +35,7 @@ func (mc *MsgCodec) Decode(c gnet.Conn) ([]byte, error) {
 		buf = append(buf, buf1...)
 	}
 	head.Decode(buf)
-	if (head.BodyLength == 0) || (head.BodyLength > MaxMessageBodySize) {
+	if (head.BodyLength == 0) || (head.BodyLength > lib.MaxMessageBodySize) {
 		return nil, errors.New("head.bodylength is zero or too large")
 	}
 	// 校验包头完成，读取包体

@@ -43,7 +43,8 @@ func (s *ServiceGate) Error() string {
 func (s *ServiceGate) Start() (err error) {
 	lib.SugarLogger.Info("Service Gate Start: ", s.Name)
 	go func(gg *ServiceGate) {
-		gnet.Serve(gg, lib.GNetAddr, gnet.WithMulticore(true), gnet.WithCodec(gnet.NewFixedLengthFrameCodec(5)), // gnet.WithCodec(&lib.MsgCodec{}),
+		gnet.Serve(gg, lib.GNetAddr, gnet.WithMulticore(true),
+			gnet.WithCodec(gnet.NewFixedLengthFrameCodec(5)), // gnet.WithCodec(&lib.MsgCodec{}),
 			gnet.WithLogger(lib.SugarLogger))
 	}(s)
 	s.Run()
