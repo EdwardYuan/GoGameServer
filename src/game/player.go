@@ -1,6 +1,6 @@
 package game
 
 type Player struct {
-	Ident int64
-	Name string
+	PlayerId int64
+	Name     string
 }
