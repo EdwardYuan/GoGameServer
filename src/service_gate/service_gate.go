@@ -7,6 +7,7 @@ import (
 
 	"github.com/panjf2000/ants/v2"
 	"github.com/panjf2000/gnet"
+	"google.golang.org/protobuf/proto"
 )
 
 type ServiceGate struct {
@@ -53,11 +54,12 @@ func (s *ServiceGate) Start() (err error) {
 
 func (s *ServiceGate) React(frame []byte, c gnet.Conn) (out []byte, action gnet.Action) {
 	// lib.Log(zap.DebugLevel, string(frame), nil)
-
 	if s.workPool != nil {
 		s.wg.Add(1)
 		s.workPool.Submit(func() {
-			lib.SugarLogger.Info(string(frame))
+			var message proto.Message
+			proto.Unmarshal(frame, message)
+			lib.SugarLogger.Info(message)
 			s.wg.Done()
 		})
 	}

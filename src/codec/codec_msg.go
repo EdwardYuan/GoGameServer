@@ -2,9 +2,9 @@ package codec
 
 import (
 	"GoGameServer/src/lib"
-	"errors"
 
 	"github.com/panjf2000/gnet"
+	"go.uber.org/zap"
 )
 
 //MsgCode实现gnet的Codec接口
@@ -19,31 +19,27 @@ func (mc *MsgCodec) Encode(c gnet.Conn, buf []byte) ([]byte, error) {
 // Decode decodes frames from TCP stream via specific implementation.
 // 读取一个完整的消息包；处理组包问题
 func (mc *MsgCodec) Decode(c gnet.Conn) ([]byte, error) {
-	size, buf := c.ReadN(lib.ReadMessageInitLength)
-	if size == 0 {
-		return nil, errors.New("")
+	var (
+		in  inBuffer
+		err error
+	)
+	in = c.Read()
+	buf, err := in.readN(MessageHeadLength)
+	if err != nil {
+		return nil, err
 	}
-	c.ShiftN(size)
-	head := lib.NewMessageHead()
-	if size < int(head.HeaderLength) {
-		// Continue Read
-		size, buf1 := c.ReadN(int(head.HeaderLength) - size)
-		c.ShiftN(size)
-		if size < int(head.HeaderLength) {
-			return nil, nil
-		}
-		buf = append(buf, buf1...)
-	}
+	head := new(ServerMessageHead)
 	head.Decode(buf)
-	if (head.BodyLength == 0) || (head.BodyLength > lib.MaxMessageBodySize) {
-		return nil, errors.New("head.bodylength is zero or too large")
+	// TODO 校验包头
+	err = head.Check()
+	if err != nil {
+		lib.Log(zap.ErrorLevel, "decode message head error", err)
+		return nil, err
 	}
-	// 校验包头完成，读取包体
-	bodySize, data := c.ReadN(int(head.BodyLength))
-	c.ShiftN(bodySize)
-	if bodySize == 0 {
-		return nil, nil
+	data, err := in.readN(head.DataLength)
+	if err != nil {
+		return nil, err
 	}
-	buf = append(buf, data...)
-	return buf, nil
+	// TODO 校验包体
+	return data, err
 }
