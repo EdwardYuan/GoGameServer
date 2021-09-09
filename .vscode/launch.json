@@ -9,7 +9,7 @@
             "type": "go",
             "request": "launch",
             "mode": "auto",
-            "args": ["run","game", "0"],
+            "args": ["run","game", "0", "--cpuprofile=game.prof"],
             "output": "${workspaceFolder}/bin/GoGameServer",
             "cwd": "${workspaceFolder}/bin",
             "program": "${workspaceFolder}/src/main"
@@ -20,7 +20,7 @@
             "type": "go",
             "request": "launch",
             "mode": "auto",
-            "args": ["run","login", "0"],
+            "args": ["run","login", "0", "--cpuprofile=login.prof"],
             "output": "${workspaceFolder}/bin/GoGameServer",
             "cwd": "${workspaceFolder}/bin",
             "program": "${workspaceFolder}/src/main"
@@ -30,7 +30,7 @@
             "type": "go",
             "request": "launch",
             "mode": "auto",
-            "args": ["run","gate", "0"],
+            "args": ["run","gate", "0", "--cpuprofile=gate.prof"],
             "output": "${workspaceFolder}/bin/GoGameServer",
             "cwd": "${workspaceFolder}/bin",
             "program": "${workspaceFolder}/src/main"
