@@ -1,10 +1,22 @@
 package game
 
+import "GoGameServer/src/lib"
+
 const MaxAgent = 10000
 
 type Agent struct {
-	OpenId string
-	P      *Player
+	OpenId    string
+	P         *Player
+	CloseChan chan int
+}
+
+func (a *Agent) Run() {
+	for {
+		select {
+		case <-a.CloseChan:
+			return
+		}
+	}
 }
 
 type AgentManager struct {
@@ -29,4 +41,10 @@ func (am *AgentManager) GetPlayer(playerId int64) *Player {
 		return am.Agents[playerId].P
 	}
 	return nil
+}
+
+func (am *AgentManager) NewAgent(s *lib.Session, playerId int64) *Agent {
+	agent := Agent{}
+	am.Agents[playerId] = &agent
+	return &agent
 }

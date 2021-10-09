@@ -16,6 +16,7 @@ type ServiceGate struct {
 	wg       sync.WaitGroup
 	*service_common.ServerCommon
 	runChan chan bool
+	h       MessageHandler
 	*gnet.EventServer
 }
 
@@ -32,6 +33,15 @@ func NewServiceGate(_name string, id int) *ServiceGate {
 		EventServer: new(gnet.EventServer),
 	}
 }
+
+func (s *ServiceGate) SendToGame(buf []byte) {
+
+}
+
+func (s *ServiceGate) SendToLogin(buf []byte) {}
+
+// 不一定有用，暂时不需要gate直接和dbserver交互
+func (s *ServiceGate) SendToDB(buf []byte) {}
 
 func (s *ServiceGate) Error() string {
 	if s.err != nil {
@@ -57,8 +67,27 @@ func (s *ServiceGate) React(frame []byte, c gnet.Conn) (out []byte, action gnet.
 	if s.workPool != nil {
 		s.wg.Add(1)
 		s.workPool.Submit(func() {
+			session := lib.NewSession(c)
+			msgReader := lib.NewMessageHeadReader()
+			msgReader.Head.Decode(frame)
+			if msgReader.Head.Check() != nil {
+				return
+			}
+			switch msgReader.Head.Command {
+			case lib.NetMsgToGame:
+				s.SendToGame(msgReader.Data)
+			case lib.NetMsgToLogin:
+				s.SendToLogin(msgReader.Data)
+			case lib.NetMsgToDB:
+				s.SendToDB(msgReader.Data)
+			default:
+				return
+			}
 			var message proto.Message
-			proto.Unmarshal(frame, message)
+			// proto.Unmarshal(frame, message)
+			if !s.h.Check(message) {
+				return
+			}
 			lib.SugarLogger.Info(message)
 			s.wg.Done()
 		})

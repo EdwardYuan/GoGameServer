@@ -2,7 +2,14 @@ package lib
 
 import (
 	"encoding/binary"
-	"net"
+
+	"github.com/panjf2000/gnet"
+)
+
+const (
+	NetMsgToGame = iota + 1
+	NetMsgToLogin
+	NetMsgToDB
 )
 
 const (
@@ -16,7 +23,18 @@ const (
 // TODO
 type Session struct {
 	id  uint64
-	con net.Conn
+	con gnet.Conn
+}
+
+func NewSession(c gnet.Conn) *Session {
+	return &Session{
+		id:  genSessionId(),
+		con: c,
+	}
+}
+
+func genSessionId() uint64 {
+	return 0
 }
 
 type IMessageHandler interface {
@@ -106,52 +124,7 @@ func newMessage(session *Session, flag MessageFlag, command uint32, data []byte)
 	return message
 }
 
-func (mh *MessageHeadReader) ReadMessage(session *Session) IMessageReader {
-	if mh.Offset < mh.Head.HeaderLength {
-		//Read Head
-		readNum, err := session.con.Read(mh.Data[mh.Offset:mh.Head.HeaderLength])
-		if err != nil {
-			SugarLogger.Errorf("MessageHeadReader ReadMessage err: %+v", err)
-			return nil
-		}
-		mh.Offset += uint32(readNum)
-		if mh.Offset < mh.Head.HeaderLength {
-			SugarLogger.Errorf("MessageHeadReader ReadMessage err: Head length read error.")
-			return nil
-		}
-		mh.Head.Decode(mh.Data[:mh.Head.HeaderLength])
-		if mh.Head.BodyLength == 0 {
-			SugarLogger.Errorf("MessageHeadReader ReadMessage Err: message body length is zero.")
-			return nil
-		}
-		if mh.Head.BodyLength > mh.MaxDataLen {
-			SugarLogger.Errorf("MessageHeadReader ReadMessage Err: too big data.")
-			return nil
-		}
-		// Read body
-		if mh.Offset < mh.Head.HeaderLength+mh.Head.BodyLength {
-			readNum, err := session.con.Read(mh.Data[mh.Offset : mh.Head.HeaderLength+mh.Head.BodyLength])
-			if err != nil {
-				SugarLogger.Errorf("MessageHeadReader ReadMessage Err: %+v", err)
-				return nil
-			}
-			mh.Offset += uint32(readNum)
-			if mh.Offset < mh.Head.HeaderLength+mh.Head.BodyLength {
-				SugarLogger.Errorf("MessageHeadReader ReadMessage Err: read body not finished.")
-				return nil
-			} else if mh.Offset == mh.Head.HeaderLength+mh.Head.BodyLength {
-				mh.Offset = 0
-				bodyData := make([]byte, mh.Head.BodyLength)
-				copy(bodyData, mh.Data[mh.Head.HeaderLength:mh.Head.HeaderLength+mh.Head.BodyLength])
-				message := newMessage(session, mh.Head.Flag, mh.Head.Command, bodyData)
-				return message
-			} else {
-				SugarLogger.Errorf("Read message error, should not reach here.")
-				return nil
-			}
-		}
-		SugarLogger.Errorf("Read Message Error, read Session %d, read offset %d", session.id, mh.Offset)
-		return nil
-	}
+func (mh *MessageHeadReader) ReadMessage(buf []byte) IMessageReader {
+	mh.Data = buf
 	return nil
 }
