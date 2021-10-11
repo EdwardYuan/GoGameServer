@@ -9,6 +9,9 @@ import (
 
 //MsgCode实现gnet的Codec接口
 type MsgCodec struct {
+	Head   lib.MessageHead
+	Offset uint8
+	Data   []byte
 }
 
 // Encode encodes frames upon server responses into TCP stream.
@@ -37,9 +40,11 @@ func (mc *MsgCodec) Decode(c gnet.Conn) ([]byte, error) {
 		return nil, err
 	}
 	data, err := in.readN(head.DataLength)
+	in = append(in, data...)
 	if err != nil {
 		return nil, err
 	}
 	// TODO 校验包体
-	return data, err
+	// 返回的是一个完整的消息体
+	return in, err
 }

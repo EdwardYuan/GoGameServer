@@ -67,19 +67,20 @@ func (s *ServiceGate) React(frame []byte, c gnet.Conn) (out []byte, action gnet.
 	if s.workPool != nil {
 		s.wg.Add(1)
 		s.workPool.Submit(func() {
-			session := lib.NewSession(c)
-			msgReader := lib.NewMessageHeadReader()
-			msgReader.Head.Decode(frame)
-			if msgReader.Head.Check() != nil {
+			// session := lib.NewSession(c)
+			headReader := lib.NewMessageHeadReader()
+			headReader.Head.Decode(frame)
+			if headReader.Head.Check() != nil {
 				return
 			}
-			switch msgReader.Head.Command {
+			headReader.ReadMessage(frame[headReader.Head.HeaderLength:])
+			switch headReader.Head.Command {
 			case lib.NetMsgToGame:
-				s.SendToGame(msgReader.Data)
+				s.SendToGame(headReader.Data)
 			case lib.NetMsgToLogin:
-				s.SendToLogin(msgReader.Data)
+				s.SendToLogin(headReader.Data)
 			case lib.NetMsgToDB:
-				s.SendToDB(msgReader.Data)
+				s.SendToDB(headReader.Data)
 			default:
 				return
 			}

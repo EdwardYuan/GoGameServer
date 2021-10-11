@@ -4,6 +4,8 @@ import (
 	"GoGameServer/src/lib"
 	"GoGameServer/src/service_common"
 	"sync"
+
+	"google.golang.org/protobuf/proto"
 )
 
 type GameServer struct {
@@ -49,4 +51,8 @@ func (gs *GameServer) Run() {
 			lib.SugarLogger.Info("running...")
 		}
 	}
+}
+
+func (gs *GameServer) OnMessageReceived(msg proto.Message) {
+
 }
