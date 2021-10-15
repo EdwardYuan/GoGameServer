@@ -2,6 +2,7 @@ package service_gs
 
 import (
 	"GoGameServer/src/lib"
+	"GoGameServer/src/pb"
 	"GoGameServer/src/service_common"
 	"sync"
 
@@ -11,7 +12,9 @@ import (
 type GameServer struct {
 	runChannel chan bool
 	*service_common.ServerCommon
-	wg sync.WaitGroup
+	wg       sync.WaitGroup
+	recvChan chan proto.Message
+	clients  map[uint64]*Client
 }
 
 func NewGameServer(_name string, id int) *GameServer {
@@ -53,6 +56,33 @@ func (gs *GameServer) Run() {
 	}
 }
 
-func (gs *GameServer) OnMessageReceived(msg proto.Message) {
-
+func (gs *GameServer) OnMessageReceived(msg lib.Message) {
+	protoMessage := &pb.ProtoInternal{}
+	switch msg.Command {
+	case pb.CMD_INTERNAL_PLAYER_LOGIN:
+		client := gs.NewClient()
+		err := proto.Unmarshal(msg.Data, protoMessage)
+		select {
+		case client.Recv <- protoMessage.Data:
+		default:
+			lib.SugarLogger.Errorf("Player login unmarshal message error %v", err)
+		}
+	case pb.CMD_INTERNAL_PLAYER_LOGOUT:
+		client := gs.clients[msg.SessionId]
+		if client != nil {
+			// Todo
+			delete(gs.clients, msg.SessionId)
+		}
+	case pb.CMD_INTERNAL_PLAYER_TO_GAME_MESSAGE:
+		client := gs.clients[msg.SessionId]
+		if client != nil {
+			err := proto.Unmarshal(msg.Data, protoMessage)
+			select {
+			case client.Recv <- protoMessage.Data:
+				lib.Logger.Info("message received.\n")
+			default:
+				lib.SugarLogger.Errorf("Player to GameServer message error %v", err)
+			}
+		}
+	}
 }

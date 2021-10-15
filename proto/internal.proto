@@ -1,0 +1,12 @@
+syntax = "proto3";
+package pb;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package="/pb";
+
+message ProtoInternal {
+    int32 Cmd = 1;
+    uint64 SessionId = 2;
+    bytes Data = 3; 
+}
