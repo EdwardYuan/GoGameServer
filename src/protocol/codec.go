@@ -1,18 +1,14 @@
-package message
+package protocol
 
 import (
+	"GoGameServer/src/lib"
 	"encoding/binary"
 	"errors"
-	"fmt"
 	"reflect"
-	"strings"
 
-	"github.com/golang/protobuf/proto"
-
-	"hope_server/kit/logz"
-
-	"pb/dict"
-	"pb/packet"
+	"github.com/gogo/protobuf/proto"
+	// "pb/dict"
+	// "pb/packet"
 )
 
 type Message struct {
@@ -49,17 +45,17 @@ var (
 	CodeToTypeDict = map[int32]string{}
 )
 
-func init() {
-	for id, name := range dict.EDict_name {
-		if strings.HasPrefix(name, "pb_") {
-			name = strings.Replace(name, "_", ".", 2)
-			name = strings.Replace(name, ".", "_", 1)
-		} else {
-			name = strings.Replace(name, "_", ".", 1)
-		}
-		CodeToTypeDict[id] = name
-		TypeToCodeDict[name] = id
-	}
+func init() { /*
+		for id, name := range dict.EDict_name {
+			if strings.HasPrefix(name, "pb_") {
+				name = strings.Replace(name, "_", ".", 2)
+				name = strings.Replace(name, ".", "_", 1)
+			} else {
+				name = strings.Replace(name, "_", ".", 1)
+			}
+			CodeToTypeDict[id] = name
+			TypeToCodeDict[name] = id
+		} */
 }
 
 func Decode(bs []byte) (msg *Message, headerLen, bodyLen int, err error) {
@@ -73,39 +69,39 @@ func Decode(bs []byte) (msg *Message, headerLen, bodyLen int, err error) {
 		err = ErrHeaderLengthOverflow
 		return
 	}
-	headerSlice := bs[2 : 2+headerLen]
+	// headerSlice := bs[2 : 2+headerLen]
 	bodySlice := bs[2+headerLen:]
 
 	bodyLen = totalLen - 2 - headerLen
 
-	header := &packet.PacketHead{}
-	if err = proto.Unmarshal(headerSlice, header); err != nil {
-		return
-	}
-	ID := header.GetFId()
+	// // header := &packet.PacketHead{}
+	// if err = proto.Unmarshal(headerSlice, header); err != nil {
+	// 	return
+	// }
+	// ID := header.GetFId()
 
 	var name string
-	if msgID := header.GetFMsgid(); msgID != 0 {
-		name = CodeToTypeDict[msgID]
-	} else {
-		err = fmt.Errorf("message id %d not supported in CodeToTypeDict for decoding", msgID)
-		return
-	}
+	// if msgID := header.GetFMsgid(); msgID != 0 {
+	// 	name = CodeToTypeDict[msgID]
+	// } else {
+	// 	err = fmt.Errorf("message id %d not supported in CodeToTypeDict for decoding", msgID)
+	// 	return
+	// }
 
 	t, ok := nameToType(name)
 	if !ok {
-		err = fmt.Errorf("message type %v not supported for decoding", header.FType)
+		// err = fmt.Errorf("message type %v not supported for decoding", header.FType)
 		return
 	}
 	//TODO 不用反射
 	v := reflect.New(t.Elem())
 	pm := v.Interface().(proto.Message)
 	if err = proto.Unmarshal(bodySlice, pm); err != nil {
-		logz.Warn("Unmarshal failed", "name", name)
+		lib.SugarLogger.Warnf("Unmarshal failed name %s", name)
 		return
 	}
 
-	msg = &Message{ID, pm}
+	// msg = &Message{ID, pm}
 	return
 }
 
@@ -121,21 +117,24 @@ func (m *Message) Encode() (out []byte, typeStr string, headerLen, bodyLen int, 
 		return
 	}
 
-	var header *packet.PacketHead
-	typeStr = m.Type()
-	if msgID, ok := TypeToCodeDict[typeStr]; ok {
-		header = &packet.PacketHead{FMsgid: msgID}
-	} else {
-		err = fmt.Errorf("TypeToCodeDict not found type %s", typeStr)
-		return
-	}
-	if m.ID != 0 {
-		header.FId = m.ID
-	}
-	headerSlice, err := proto.Marshal(header)
-	if err != nil {
-		return
-	}
+	// var header *packet.PacketHead
+	// typeStr = m.Type()
+	// if msgID, ok := TypeToCodeDict[typeStr]; ok {
+	// 	header = &packet.PacketHead{FMsgid: msgID}
+	// } else {
+	// 	err = fmt.Errorf("TypeToCodeDict not found type %s", typeStr)
+	// 	return
+	// }
+	// // if m.ID != 0 {
+	// // 	header.FId = m.ID
+	// // }
+	// headerSlice, err := proto.Marshal(header)
+	// if err != nil {
+	// 	return
+	// }
+
+	var headerSlice []byte // 删除 编译通过用
+
 	headerLenSlice := make([]byte, 2)
 	binary.LittleEndian.PutUint16(headerLenSlice, uint16(len(headerSlice)))
 	headerLen = len(headerSlice)
@@ -148,11 +147,15 @@ func (m *Message) Encode() (out []byte, typeStr string, headerLen, bodyLen int, 
 }
 
 func AddHead(seq int32, cmd int32, bodySlice []byte) ([]byte, error) {
-	header := &packet.PacketHead{FId: seq, FMsgid: cmd}
-	headerSlice, err := proto.Marshal(header)
-	if err != nil {
-		return nil, err
-	}
+	//*************************************************
+	// header := &packet.PacketHead{FId: seq, FMsgid: cmd}
+	// headerSlice, err := proto.Marshal(header)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	///// 删除 编译通过用
+	headerSlice := make([]byte, 2)
+	//////
 	headerLenSlice := make([]byte, 2)
 	binary.LittleEndian.PutUint16(headerLenSlice, uint16(len(headerSlice)))
 	headerLen := len(headerSlice)

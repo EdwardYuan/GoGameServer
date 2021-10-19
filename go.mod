@@ -3,6 +3,7 @@ module GoGameServer
 go 1.16
 
 require (
+	github.com/gogo/protobuf v1.3.2
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/panjf2000/ants/v2 v2.4.6
 	github.com/panjf2000/gnet v1.5.3
