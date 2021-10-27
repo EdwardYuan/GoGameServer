@@ -3,19 +3,91 @@ package service_proxy
 import (
 	"GoGameServer/src/lib"
 	"context"
-	"encoding/json"
-	"os"
+	"errors"
+	"fmt"
 	"strconv"
 	"time"
 
-	"github.com/coreos/etcd/client"
+	client "go.etcd.io/etcd/clientv3"
 )
 
 // 代理服务，主要用于服务注册与发现, 消息分发
 type ServiceProxy struct {
-	ProcessId int            // 进程ID ， 单机调试时用来标志每一个服务
-	info      Serverinfo     // 服务端信息
-	KeysAPI   client.KeysAPI // API client, 此处用的是 V2 版本的API，是基于 http 的。 V3版本的是基于grpc的API
+	ProcessId int        // 进程ID ， 单机调试时用来标志每一个服务
+	info      Serverinfo // 服务端信息
+	// KeysAPI   client.KeysAPI // API client, 此处用的是 V2 版本的API，是基于 http 的。 V3版本的是基于grpc的API
+	Servers map[int32]*Serverinfo
+	Center  *RegisterCenter
+}
+
+type RegisterCenter struct {
+	Proxy         *ServiceProxy
+	RegisteredSvr chan Serverinfo
+	QueryChan     chan int32
+	Client        *client.Client
+}
+
+func NewRegisterCenter() *RegisterCenter {
+	cli, err := client.New(client.Config{
+		Endpoints:   []string{"http://127.0.0.1:2359"},
+		DialTimeout: 5 * time.Second,
+	})
+	lib.FatalOnError(err, "New Proxy Service error")
+	return &RegisterCenter{
+		Client:        cli,
+		RegisteredSvr: make(chan Serverinfo, 100),
+	}
+}
+
+func NewSericeProxy() *ServiceProxy {
+	return &ServiceProxy{
+		ProcessId: 0,
+		info:      NewSericeInfo(0, "", 0),
+		Servers:   make(map[int32]*Serverinfo, 1),
+		Center:    NewRegisterCenter(),
+	}
+}
+
+func (c *RegisterCenter) run(s *Serverinfo) {
+	for {
+		select {
+		case <-c.RegisteredSvr:
+			go func() {
+				_, err := c.Client.Put(context.TODO(), "services"+strconv.Itoa(int(s.Id)), s.IP+":"+strconv.Itoa(int(s.Port)))
+				if err != nil {
+					lib.SugarLogger.Errorf("Register server error %v", err)
+				}
+			}()
+		case serverId := <-c.QueryChan:
+			go func() {
+				key := "services" + strconv.Itoa(int(serverId))
+				resp, err := c.Client.Get(context.Background(), key)
+				if err != nil {
+					lib.SugarLogger.Errorf("server not registered %v", err)
+				}
+				// TODO 查询结果返回 处理相应的数据 到这里说明查到了注册的服务
+				value := resp.Kvs[0]
+				// TODO parse value and return
+				fmt.Printf("serverinfo is %+v", value)
+			}()
+		}
+	}
+}
+
+func (p *ServiceProxy) Start() {
+	p.Center.Proxy = p
+
+}
+
+func (p *ServiceProxy) AddrServer(s *Serverinfo) {
+	// 如果proxy服务的etcd client不存在，直接退出
+	if p.Center == nil {
+		err := errors.New("No RegisterCenter Exist.")
+		lib.FatalOnError(err, "Register new service")
+	}
+	// 注册对应的服务到
+	p.Servers[s.Id] = s
+	p.Center.RegisteredSvr <- *s
 }
 
 // workerInfo is the service register information to etcd
@@ -25,6 +97,15 @@ type Serverinfo struct {
 	Port int32  `json:"port"` // 对外服务端口，本机或者端口映射后得到的
 }
 
+func NewSericeInfo(id int32, ip string, port int32) Serverinfo {
+	return Serverinfo{
+		Id:   id,
+		IP:   ip,
+		Port: port,
+	}
+}
+
+/*
 // 注册服务
 func RegisterService(endpoints []string) {
 	cfg := client.Config{
@@ -64,3 +145,4 @@ func (s *ServiceProxy) HeartBeat() {
 		time.Sleep(time.Second * 10)
 	}
 }
+*/
