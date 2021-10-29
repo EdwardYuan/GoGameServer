@@ -39,7 +39,7 @@ func NewRegisterCenter() *RegisterCenter {
 	}
 }
 
-func NewSericeProxy() *ServiceProxy {
+func NewSericeProxy(_name string, id int) *ServiceProxy {
 	return &ServiceProxy{
 		ProcessId: 0,
 		info:      NewSericeInfo(0, "", 0),
@@ -74,9 +74,22 @@ func (c *RegisterCenter) run(s *Serverinfo) {
 	}
 }
 
-func (p *ServiceProxy) Start() {
+func (p *ServiceProxy) Start() (err error) {
 	p.Center.Proxy = p
+	p.Run()
+	return
+}
 
+func (p *ServiceProxy) Stop() {
+
+}
+
+func (p *ServiceProxy) Run() {
+	p.Center.run(&p.info)
+}
+
+func (p *ServiceProxy) LoadConfig(path string) error {
+	return nil
 }
 
 func (p *ServiceProxy) AddrServer(s *Serverinfo) {

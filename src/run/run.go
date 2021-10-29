@@ -8,6 +8,7 @@ import (
 	"GoGameServer/src/service_gate"
 	"GoGameServer/src/service_gs"
 	"GoGameServer/src/service_lg"
+	"GoGameServer/src/service_proxy"
 	"fmt"
 	"log"
 	"os"
@@ -45,6 +46,8 @@ func RunServer(args []string) {
 		Svr = service_db.NewServiceDB(serviceName, serviceIdx)
 	case "gate":
 		Svr = service_gate.NewServiceGate(serviceName, serviceIdx)
+	case "proxy":
+		Svr = service_proxy.NewSericeProxy(serviceName, serviceIdx)
 	default:
 		fmt.Printf("GoGameServer: parameter error\n")
 		return
