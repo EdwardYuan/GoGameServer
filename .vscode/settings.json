@@ -2,5 +2,7 @@
     "cSpell.words": [
         "clientv",
         "sercer"
-    ]
+    ],
+    "restructuredtext.pythonRecommendation.disabled": true,
+    "restructuredtext.languageServer.disabled": true
 }
