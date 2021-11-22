@@ -29,7 +29,7 @@ type EtcdAgent struct {
 
 func NewEtcdAgent() *EtcdAgent {
 	cli, err := client.New(client.Config{
-		Endpoints:   []string{"http://127.0.0.1:2359"},
+		Endpoints:   []string{"http://127.0.0.1:2359"}, // TODO 读取配置
 		DialTimeout: 5 * time.Second,
 	})
 	lib.FatalOnError(err, "New Proxy Service error")
@@ -42,8 +42,8 @@ func NewEtcdAgent() *EtcdAgent {
 
 func NewSericeProxy(_name string, id int) *ServiceProxy {
 	return &ServiceProxy{
-		ProcessId: 0, // 自己的processid为0
-		info:      NewSericeInfo(int32(id), lib.GetLocalIP(lib.IPv4), _name, 0),
+		ProcessId: 0, // 自己的ProcessId为0
+		info:      NewServerInfo(int32(id), lib.GetLocalIP(lib.IPv4), _name, 0),
 		Servers:   make(map[string]*Serverinfo, 1),
 		Agent:     NewEtcdAgent(),
 	}
@@ -110,11 +110,13 @@ func (p *ServiceProxy) AddrServer(s *Serverinfo) {
 
 func (s *ServiceProxy) HeartBeat() {
 	key := "services/" + strconv.Itoa(s.ProcessId)
-	_, err := s.Agent.Client.Get(context.Background(), key, nil)
-	lib.FatalOnError(err, "Proxy Service"+strconv.Itoa(s.ProcessId)+" error: ")
+	if s.Agent != nil && s.Agent.Client != nil {
+		_, err := s.Agent.Client.Get(context.Background(), key, nil)
+		lib.FatalOnError(err, "Proxy Service"+strconv.Itoa(s.ProcessId)+" error: ")
+	}
 	var value string
 	var leaseId client.LeaseID
-	_, err = s.Agent.Client.Put(context.Background(), key, string(value), client.WithLease(leaseId))
+	_, err := s.Agent.Client.Put(context.Background(), key, string(value), client.WithLease(leaseId))
 	lib.FatalOnError(err, "Error update workerInfo: %v")
 }
 
@@ -126,7 +128,7 @@ type Serverinfo struct {
 	Port int32  `json:"port"` // 对外服务端口，本机或者端口映射后得到的
 }
 
-func NewSericeInfo(id int32, ip string, name string, port int32) Serverinfo {
+func NewServerInfo(id int32, ip string, name string, port int32) Serverinfo {
 	return Serverinfo{
 		Id:   id,
 		Name: name,

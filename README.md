@@ -6,7 +6,7 @@ a simple message driven game server in go.
 * gnet
 * RabbitMQ
 * redis
-
+* etcd
 ### Build
 
 
