@@ -3,6 +3,7 @@ package service_gate
 import (
 	"GoGameServer/src/lib"
 	"GoGameServer/src/service_common"
+	"go.uber.org/zap"
 	"sync"
 
 	"github.com/panjf2000/ants/v2"
@@ -54,9 +55,10 @@ func (s *ServiceGate) Error() string {
 func (s *ServiceGate) Start() (err error) {
 	lib.SugarLogger.Info("Service Gate Start: ", s.Name)
 	go func(gg *ServiceGate) {
-		gnet.Serve(gg, lib.GNetAddr, gnet.WithMulticore(true),
+		err = gnet.Serve(gg, lib.GNetAddr, gnet.WithMulticore(true),
 			gnet.WithCodec(gnet.NewFixedLengthFrameCodec(5)), // gnet.WithCodec(&lib.MsgCodec{}),
 			gnet.WithLogger(lib.SugarLogger))
+		lib.FatalOnError(err, "fatal: start gnet error")
 	}(s)
 	s.Run()
 	return
@@ -66,7 +68,7 @@ func (s *ServiceGate) React(frame []byte, c gnet.Conn) (out []byte, action gnet.
 	// lib.Log(zap.DebugLevel, string(frame), nil)
 	if s.workPool != nil {
 		s.wg.Add(1)
-		s.workPool.Submit(func() {
+		err := s.workPool.Submit(func() {
 			// session := lib.NewSession(c)
 			headReader := lib.NewMessageHeadReader()
 			headReader.Head.Decode(frame)
@@ -92,6 +94,9 @@ func (s *ServiceGate) React(frame []byte, c gnet.Conn) (out []byte, action gnet.
 			lib.SugarLogger.Info(message)
 			s.wg.Done()
 		})
+		if err != nil {
+			lib.Log(zap.ErrorLevel, "submit message pool error", err)
+		}
 	}
 
 	return

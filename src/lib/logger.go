@@ -36,16 +36,24 @@ func SyncLogger() {
 	SugarLogger.Sync()
 }
 
+//SysLoggerFatal 使用go自带的log记录fatal
 func SysLoggerFatal(err error, msg string) {
 	if err != nil {
 		log.Fatalf("Fatal: %s: %s", err, msg)
 	}
 }
 
+//FatalOnError 记录错误并panic，严重错误导致程序无法正常运转时使用
 func FatalOnError(err error, msg string) {
 	if err != nil {
 		Logger.Fatal(msg)
-		panic(nil)
+		panic(msg)
+	}
+}
+
+func LogIfError(err error, msg string) {
+	if err != nil {
+		Log(zap.ErrorLevel, msg, err)
 	}
 }
 

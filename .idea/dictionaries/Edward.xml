@@ -2,6 +2,7 @@
   <dictionary name="Edward">
     <words>
       <w>dbserver</w>
+      <w>etcd</w>
       <w>gnet</w>
       <w>rabbitmq</w>
       <w>yyyymmdd</w>

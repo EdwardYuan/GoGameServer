@@ -40,7 +40,7 @@ func NewEtcdAgent() *EtcdAgent {
 	}
 }
 
-func NewSericeProxy(_name string, id int) *ServiceProxy {
+func NewServiceProxy(_name string, id int) *ServiceProxy {
 	return &ServiceProxy{
 		ProcessId: 0, // 自己的ProcessId为0
 		info:      NewServerInfo(int32(id), lib.GetLocalIP(lib.IPv4), _name, 0),
@@ -55,17 +55,13 @@ func (c *EtcdAgent) run(s *Serverinfo) {
 		case <-c.RegisteredSvr:
 			go func() {
 				_, err := c.Client.Put(context.TODO(), "services/"+strconv.Itoa(int(s.Id)), s.IP+":"+strconv.Itoa(int(s.Port)))
-				if err != nil {
-					lib.SugarLogger.Errorf("Register server error %v", err)
-				}
+				lib.LogIfError(err,"Register server error" )
 			}()
 		case serverId := <-c.QueryChan:
 			go func() {
 				key := "services/" + strconv.Itoa(int(serverId))
 				resp, err := c.Client.Get(context.Background(), key)
-				if err != nil {
-					lib.SugarLogger.Errorf("server not registered %v", err)
-				}
+				lib.LogIfError(err, "server not registered")
 				// TODO 查询结果返回 处理相应的数据 到这里说明查到了注册的服务
 				value := resp.Kvs[0]
 				// TODO parse value and return
@@ -99,7 +95,7 @@ func (p *ServiceProxy) LoadConfig(path string) error {
 func (p *ServiceProxy) AddrServer(s *Serverinfo) {
 	// 如果proxy服务的etcd client不存在，直接退出
 	if p.Agent == nil {
-		err := errors.New("No EtcdAgent Exist.")
+		err := errors.New("no etcd agent exist.")
 		lib.FatalOnError(err, "Register new service")
 	}
 	key := strconv.Itoa(int(s.Id)) + s.Name

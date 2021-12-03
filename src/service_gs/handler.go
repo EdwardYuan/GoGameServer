@@ -6,7 +6,6 @@ import (
 	"GoGameServer/src/protocol"
 	"GoGameServer/src/service_common"
 	"fmt"
-
 	"google.golang.org/protobuf/proto"
 )
 
@@ -40,7 +39,8 @@ func (c *Client) run() {
 		select {
 		case data := <-c.Recv:
 			var message proto.Message
-			proto.Unmarshal(data, message)
+			err := proto.Unmarshal(data, message)
+			lib.LogIfError(err, "unmarshal message error")
 			//Todo 反射对应消息处理函数
 			se := lib.SeqEvent{}
 			if seq, evt, name, _, _, err := protocol.ParseProtobufEvent(data); err != nil {

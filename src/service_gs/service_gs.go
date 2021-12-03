@@ -62,6 +62,7 @@ func (gs *GameServer) OnMessageReceived(msg lib.Message) {
 	case pb.CMD_INTERNAL_PLAYER_LOGIN:
 		client := gs.NewClient()
 		err := proto.Unmarshal(msg.Data, protoMessage)
+		lib.LogIfError(err, "Unmarshal Message error")
 		select {
 		case client.Recv <- protoMessage.Data:
 		default:
@@ -77,6 +78,7 @@ func (gs *GameServer) OnMessageReceived(msg lib.Message) {
 		client := gs.clients[msg.SessionId]
 		if client != nil {
 			err := proto.Unmarshal(msg.Data, protoMessage)
+			lib.LogIfError(err, "Unmarshal Message error")
 			select {
 			case client.Recv <- protoMessage.Data:
 				lib.Logger.Info("message received.\n")
