@@ -6,7 +6,7 @@ import (
 	"GoGameServer/src/service_common"
 	"GoGameServer/src/service_db"
 	"GoGameServer/src/service_gate"
-	"GoGameServer/src/service_gs"
+	"GoGameServer/src/service_game"
 	"GoGameServer/src/service_lg"
 	"GoGameServer/src/service_proxy"
 	"fmt"
@@ -17,7 +17,7 @@ import (
 	"strings"
 )
 
-func RunServer(args []string) {
+func StartServer(args []string) {
 	if len(args) < 3 {
 		log.Fatal("not enough parameters, please specify the service to start.")
 		return
@@ -40,7 +40,7 @@ func RunServer(args []string) {
 	lib.Log(zap.InfoLevel, "starting " + serviceType, nil)
 	switch serviceType {
 	case "game":
-		Svr = service_gs.NewGameServer(serviceName, serviceIdx)
+		Svr = service_game.NewGameServer(serviceName, serviceIdx)
 	case "login":
 		Svr = service_lg.NewLoginGate(serviceName, serviceIdx)
 	case "dbserver":

@@ -25,6 +25,7 @@ type EtcdAgent struct {
 	QueryChan     chan int32
 	Client        *client.Client
 	ticker        time.Ticker
+	CloseChan     chan bool
 }
 
 func NewEtcdAgent() *EtcdAgent {
@@ -55,7 +56,7 @@ func (c *EtcdAgent) run(s *Serverinfo) {
 		case <-c.RegisteredSvr:
 			go func() {
 				_, err := c.Client.Put(context.TODO(), "services/"+strconv.Itoa(int(s.Id)), s.IP+":"+strconv.Itoa(int(s.Port)))
-				lib.LogIfError(err,"Register server error" )
+				lib.LogIfError(err, "Register server error")
 			}()
 		case serverId := <-c.QueryChan:
 			go func() {
@@ -69,6 +70,8 @@ func (c *EtcdAgent) run(s *Serverinfo) {
 			}()
 		case <-c.ticker.C:
 			go c.Proxy.HeartBeat()
+		case <-c.CloseChan:
+			c.Client.Close()
 		}
 	}
 }

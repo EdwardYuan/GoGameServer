@@ -9,7 +9,7 @@
             "type": "go",
             "request": "launch",
             "mode": "auto",
-            "args": ["run","game", "0", "--cpuprofile=game.prof"],
+            "args": ["run","game", "0","--config=config/config.toml", "--cpuprofile=game.prof"],
             "output": "${workspaceFolder}/bin/GoGameServer",
             "cwd": "${workspaceFolder}/bin",
             "program": "${workspaceFolder}/src/main"
@@ -20,7 +20,7 @@
             "type": "go",
             "request": "launch",
             "mode": "auto",
-            "args": ["run","login", "0", "--cpuprofile=login.prof"],
+            "args": ["run","login", "0","--config=config/config.toml", "--cpuprofile=login.prof"],
             "output": "${workspaceFolder}/bin/GoGameServer",
             "cwd": "${workspaceFolder}/bin",
             "program": "${workspaceFolder}/src/main"
@@ -30,7 +30,7 @@
             "type": "go",
             "request": "launch",
             "mode": "auto",
-            "args": ["run","gate", "0", "--cpuprofile=gate.prof"],
+            "args": ["run","gate", "0","--config=config/config.toml", "--cpuprofile=gate.prof"],
             "output": "${workspaceFolder}/bin/GoGameServer",
             "cwd": "${workspaceFolder}/bin",
             "program": "${workspaceFolder}/src/main"
@@ -41,7 +41,7 @@
             "type": "go",
             "request": "launch",
             "mode": "auto",
-            "args": ["run","proxy", "0", "--cpuprofile=proxy.prof"],
+            "args": ["run","proxy", "0","--config=config/config.toml", "--cpuprofile=proxy.prof"],
             "output": "${workspaceFolder}/bin/GoGameServer",
             "cwd": "${workspaceFolder}/bin",
             "program": "${workspaceFolder}/src/main"

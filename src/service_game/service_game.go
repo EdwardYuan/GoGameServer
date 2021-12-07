@@ -1,10 +1,15 @@
-package service_gs
+package service_game
 
 import (
 	"GoGameServer/src/lib"
 	"GoGameServer/src/pb"
 	"GoGameServer/src/service_common"
+	"context"
+	"github.com/spf13/viper"
+	clientv3 "go.etcd.io/etcd/client/v3"
+	"strconv"
 	"sync"
+	"time"
 
 	"google.golang.org/protobuf/proto"
 )
@@ -29,9 +34,23 @@ func NewGameServer(_name string, id int) *GameServer {
 	}
 }
 
+func (gs *GameServer) RegisterService() {
+	etcd := viper.Sub("etcd")
+	endpoint := etcd.GetString("endpoints")
+	cli, err := clientv3.New(clientv3.Config{
+		Endpoints:   []string{endpoint}, // TODO 配置多个etcd节点
+		DialTimeout: 5 * time.Second,
+	})
+	lib.FatalOnError(err, "New Proxy Service error")
+	defer cli.Close()
+	_, err = cli.Put(context.Background(), gs.Name, strconv.Itoa(gs.Id))
+	lib.FatalOnError(err, "Failed to register Service to etcd.")
+}
+
 func (gs *GameServer) Start() (err error) {
 	gs.ServerCommon.Start()
 	lib.SugarLogger.Info("Service ", gs.Name, " Start...")
+	gs.RegisterService()
 	gs.Run()
 	return
 }

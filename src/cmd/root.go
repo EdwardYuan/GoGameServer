@@ -52,7 +52,7 @@ to quickly create a Cobra application.`,
 			pprof.StartCPUProfile(f)
 			defer pprof.StopCPUProfile()
 		}
-		run.RunServer(args)
+		run.StartServer(args)
 	},
 }
 
@@ -63,13 +63,14 @@ func Execute() {
 }
 
 func init() {
-	cobra.OnInitialize(initConfig)
-
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.run.yaml)")
+	//rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.run.yaml)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "config/config.toml", "config file (default is $HOME/config.toml)")
+
+	cobra.OnInitialize(initConfig)
 	rootCmd.PersistentFlags().StringVar(&cpuprofile, "cpuprofile", "gogameserver.prof", "--cpuprofile=string")
 	viper.BindPFlag("cpuprofile", rootCmd.PersistentFlags().Lookup("cpuprofile"))
 	// Cobra also supports local flags, which will only run

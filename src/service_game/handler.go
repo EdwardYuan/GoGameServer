@@ -1,4 +1,4 @@
-package service_gs
+package service_game
 
 import (
 	"GoGameServer/src/game"
