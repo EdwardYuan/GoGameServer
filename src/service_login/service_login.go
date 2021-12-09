@@ -1,4 +1,4 @@
-package service_lg
+package service_login
 
 import (
 	"GoGameServer/src/config"

@@ -5,9 +5,9 @@ import (
 	"GoGameServer/src/lib"
 	"GoGameServer/src/service_common"
 	"GoGameServer/src/service_db"
-	"GoGameServer/src/service_gate"
 	"GoGameServer/src/service_game"
-	"GoGameServer/src/service_lg"
+	"GoGameServer/src/service_gate"
+	"GoGameServer/src/service_login"
 	"GoGameServer/src/service_proxy"
 	"fmt"
 	"go.uber.org/zap"
@@ -37,12 +37,12 @@ func StartServer(args []string) {
 	}
 	lib.SugarLogger.Info("IP address: " + addr)
 	global.ServerMap.MapAddrToServerName(lib.GetLocalIP(lib.IPv4), serviceType, serviceName)
-	lib.Log(zap.InfoLevel, "starting " + serviceType, nil)
+	lib.Log(zap.InfoLevel, "starting "+serviceType, nil)
 	switch serviceType {
 	case "game":
 		Svr = service_game.NewGameServer(serviceName, serviceIdx)
 	case "login":
-		Svr = service_lg.NewLoginGate(serviceName, serviceIdx)
+		Svr = service_login.NewLoginGate(serviceName, serviceIdx)
 	case "dbserver":
 		Svr = service_db.NewServiceDB(serviceName, serviceIdx)
 	case "gate":
