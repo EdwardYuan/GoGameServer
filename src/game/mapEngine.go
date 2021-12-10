@@ -10,6 +10,6 @@ func NewMapEngine() *MapEngine {
 	}
 }
 
-func (me *MapEngine) GetMap(mapid int) *ObjMap {
-	return me.maps[mapid]
+func (me *MapEngine) GetMap(mapId int) *ObjMap {
+	return me.maps[mapId]
 }

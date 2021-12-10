@@ -4,6 +4,7 @@ import (
 	"GoGameServer/src/lib"
 	"GoGameServer/src/service_common"
 	"go.uber.org/zap"
+	"net"
 	"sync"
 
 	"github.com/panjf2000/ants/v2"
@@ -16,6 +17,7 @@ type ServiceGate struct {
 	workPool *ants.Pool
 	wg       sync.WaitGroup
 	*service_common.ServerCommon
+	gsConn  *net.Conn
 	runChan chan bool
 	h       MessageHandler
 	*gnet.EventServer
@@ -60,6 +62,14 @@ func (s *ServiceGate) Start() (err error) {
 			gnet.WithLogger(lib.SugarLogger))
 		lib.FatalOnError(err, "fatal: start gnet error")
 	}(s)
+	li, err := net.Listen("tcp", "127.0.0.1:8890")
+	lib.LogIfError(err, "listen to connect error")
+	conn, err := li.Accept()
+	lib.LogIfError(err, "accept connection error")
+	//TODO retry
+	if conn != nil {
+		s.gsConn = &conn
+	}
 	s.Run()
 	return
 }

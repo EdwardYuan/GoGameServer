@@ -42,5 +42,4 @@ func RegisterService(ep []string, name string, typ string, desc string) {
 	defer cli.Close()
 	_, err = cli.Put(context.Background(), name, typ)
 	lib.LogIfError(err, name+"failed to register service to etcd")
-
 }

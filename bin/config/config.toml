@@ -5,10 +5,13 @@ addr="127.0.0.1"
 port="8889"
 [logingate]
 addr="127.0.0.1"
-prot="8888"
+port="8888"
 [gamegate]
 addr="127.0.0.1"
-prot="8890"
+port="8890"
+[dbserver]
+addr="127.0.0.1"
+port="8891"
 [mysql]
 addr="127.0.0.1:3306"
 [etcd]

@@ -6,14 +6,19 @@ import (
 	"GoGameServer/src/pb"
 	"GoGameServer/src/service_common"
 	"github.com/spf13/viper"
+	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
+	"net"
 	"sync"
+	"time"
 )
 
 type GameServer struct {
 	runChannel chan bool
 	*service_common.ServerCommon
 	wg       sync.WaitGroup
+	gateConn net.Conn
+	dbConn   net.Conn
 	recvChan chan proto.Message
 	clients  map[uint64]*Client
 }
@@ -48,14 +53,50 @@ func (gs *GameServer) RegisterService() {
 func (gs *GameServer) Start() (err error) {
 	gs.ServerCommon.Start()
 	lib.SugarLogger.Info("Service ", gs.Name, " Start...")
-	gs.RegisterService()
+	//gs.RegisterService()
+	// 连接Gate
+	err = gs.connectToGate()
+	lib.FatalOnError(err, "Connect to Gate")
+	// 连接DBServer
+	err = gs.connectToDBServer()
+	lib.FatalOnError(err, "Connect to DBServer")
 	gs.Run()
 	return
+}
+
+func (gs *GameServer) connectToGate() (err error) {
+	gatecfg := viper.Sub("gamegate")
+	addr := gatecfg.GetString("addr")
+	port := gatecfg.GetString("port")
+	gs.gateConn, err = net.DialTimeout("tcp", addr+":"+port, 15*time.Second)
+	lib.LogIfError(err, "connect to gate error")
+	if gs.gateConn != nil {
+		lib.Log(zap.InfoLevel, "Connected to GameGate successfully.", nil)
+	}
+	return err
+}
+
+func (gs *GameServer) connectToDBServer() (err error) {
+	dbcfg := viper.Sub("dbserver")
+	addr := dbcfg.GetString("addr")
+	port := dbcfg.GetString("port")
+	gs.dbConn, err = net.DialTimeout("tcp", addr+":"+port, 15*time.Second)
+	lib.LogIfError(err, "connect to db error")
+	if gs.dbConn != nil {
+		lib.Log(zap.InfoLevel, "Connected to DBServer successfully", nil)
+	}
+	return err
+}
+
+func (gs *GameServer) netLoop() {
+
 }
 
 func (gs *GameServer) Stop() {
 	defer func() {
 		close(gs.runChannel)
+		gs.dbConn.Close()
+		gs.gateConn.Close()
 	}()
 	gs.wg.Wait()
 	gs.runChannel <- false
