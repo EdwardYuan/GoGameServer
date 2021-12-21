@@ -11,3 +11,4 @@
 bin/gate.prof
 bin/game.prof
 bin/login.prof
+bin/*.prof
