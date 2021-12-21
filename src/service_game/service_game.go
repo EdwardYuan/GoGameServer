@@ -1,6 +1,7 @@
 package service_game
 
 import (
+	"GoGameServer/src/game"
 	"GoGameServer/src/global"
 	"GoGameServer/src/lib"
 	"GoGameServer/src/pb"
@@ -16,11 +17,13 @@ import (
 type GameServer struct {
 	runChannel chan bool
 	*service_common.ServerCommon
-	wg       sync.WaitGroup
-	gateConn net.Conn
-	dbConn   net.Conn
-	recvChan chan proto.Message
-	clients  map[uint64]*Client
+	wg           sync.WaitGroup
+	gateConn     net.Conn
+	dbConn       net.Conn
+	proxyConn    net.Conn
+	recvChan     chan lib.Message
+	clients      map[uint64]*Client
+	AgentManager *game.AgentManager
 }
 
 func NewGameServer(_name string, id int) *GameServer {
@@ -30,8 +33,9 @@ func NewGameServer(_name string, id int) *GameServer {
 			Name: _name,
 			Id:   id,
 		},
-		wg:         sync.WaitGroup{},
-		runChannel: make(chan bool),
+		wg:           sync.WaitGroup{},
+		runChannel:   make(chan bool),
+		AgentManager: game.NewAgentManager(),
 	}
 }
 
@@ -60,7 +64,19 @@ func (gs *GameServer) Start() (err error) {
 	// 连接DBServer
 	err = gs.connectToDBServer()
 	lib.FatalOnError(err, "Connect to DBServer")
+	// 连接Proxy
+	err = gs.connectToProxy()
 	gs.Run()
+	return
+}
+
+func (gs *GameServer) connectToProxy() (err error) {
+	proxyAddr := viper.GetString("proxy.addr") + viper.GetString("proxy.port")
+	gs.proxyConn, err = net.DialTimeout("tcp", proxyAddr, 15*time.Second)
+	lib.LogIfError(err, "connect to proxy")
+	if gs.proxyConn != nil {
+		lib.Log(zap.InfoLevel, "Connected to Proxy successfully", err)
+	}
 	return
 }
 
@@ -71,7 +87,7 @@ func (gs *GameServer) connectToGate() (err error) {
 	gs.gateConn, err = net.DialTimeout("tcp", addr+":"+port, 15*time.Second)
 	lib.LogIfError(err, "connect to gate error")
 	if gs.gateConn != nil {
-		lib.Log(zap.InfoLevel, "Connected to GameGate successfully.", nil)
+		lib.Log(zap.InfoLevel, "Connected to GameGate successfully.", err)
 	}
 	return err
 }
@@ -83,7 +99,7 @@ func (gs *GameServer) connectToDBServer() (err error) {
 	gs.dbConn, err = net.DialTimeout("tcp", addr+":"+port, 15*time.Second)
 	lib.LogIfError(err, "connect to db error")
 	if gs.dbConn != nil {
-		lib.Log(zap.InfoLevel, "Connected to DBServer successfully", nil)
+		lib.Log(zap.InfoLevel, "Connected to DBServer successfully", err)
 	}
 	return err
 }
@@ -110,6 +126,10 @@ func (gs *GameServer) Run() {
 			gs.Stop()
 		case <-gs.runChannel:
 			lib.SugarLogger.Info("running...")
+		case msg, ok := <-gs.recvChan:
+			if ok {
+				gs.OnMessageReceived(msg)
+			}
 		}
 	}
 }
@@ -118,11 +138,14 @@ func (gs *GameServer) OnMessageReceived(msg lib.Message) {
 	protoMessage := &pb.ProtoInternal{}
 	switch msg.Command {
 	case pb.CMD_INTERNAL_PLAYER_LOGIN:
-		client := gs.NewClient()
+		//TODO创建session，从消息获取playerid
+		client := gs.NewClient(nil, 0)
 		err := proto.Unmarshal(msg.Data, protoMessage)
 		lib.LogIfError(err, "Unmarshal Message error")
 		select {
 		case client.Recv <- protoMessage.Data:
+			err = client.Start()
+			lib.LogIfError(err, "start client error")
 		default:
 			lib.SugarLogger.Errorf("Player login unmarshal message error %v", err)
 		}
@@ -130,7 +153,13 @@ func (gs *GameServer) OnMessageReceived(msg lib.Message) {
 		client := gs.clients[msg.SessionId]
 		if client != nil {
 			// Todo
-			delete(gs.clients, msg.SessionId)
+			err := client.Stop()
+			lib.LogIfError(err, "client stop error")
+			go func() {
+				if client.closed {
+					delete(gs.clients, msg.SessionId)
+				}
+			}()
 		}
 	case pb.CMD_INTERNAL_PLAYER_TO_GAME_MESSAGE:
 		client := gs.clients[msg.SessionId]

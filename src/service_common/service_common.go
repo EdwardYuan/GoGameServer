@@ -62,5 +62,7 @@ func (s *ServerCommon) Decode(data []byte) (msg lib.Message, err error) {
 }
 
 func (s *ServerCommon) HandleMessage(msg lib.Message) {
+	go func() {
 
+	}()
 }

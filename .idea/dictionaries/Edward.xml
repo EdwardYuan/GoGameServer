@@ -4,6 +4,7 @@
       <w>dbserver</w>
       <w>etcd</w>
       <w>gnet</w>
+      <w>playerid</w>
       <w>rabbitmq</w>
       <w>yyyymmdd</w>
       <w>yyyymmddhhmmss</w>
