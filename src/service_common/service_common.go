@@ -37,6 +37,8 @@ func (s *ServerCommon) LoadConfig(path string) error {
 	config.GameServerPort = viper.GetString("gameserver.port")
 	config.LoginGateAddr = viper.GetString("logingate.addr")
 	config.LoginGatePort = viper.GetString("logingate.port")
+	config.GameGateAddr = viper.GetString("gamegate.addr")
+	config.GameGatePort = viper.GetString("gamegate.port")
 	lib.FatalOnError(err, "Load Config Error")
 	return nil
 }

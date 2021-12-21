@@ -6,6 +6,8 @@ var (
 	GameServerPort string
 	LoginGateAddr  string
 	LoginGatePort  string
+	GameGateAddr   string
+	GameGatePort   string
 	MySqlUrl       string
 	EtcdUrl        string
 	DBServiceAddr  string

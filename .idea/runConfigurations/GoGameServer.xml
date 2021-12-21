@@ -1,0 +1,14 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="GoGameServer" type="GoApplicationRunConfiguration" factoryName="Go Application" singleton="false">
+    <log_file alias="gs_log" path="$PROJECT_DIR$/bin" />
+    <module name="GoGameServer" />
+    <working_directory value="$PROJECT_DIR$/bin" />
+    <parameters value="run game 0 --config=config/config.toml --cpuprofile=game.prof" />
+    <kind value="PACKAGE" />
+    <package value="GoGameServer/src/main" />
+    <directory value="$PROJECT_DIR$/" />
+    <filePath value="$PROJECT_DIR$/" />
+    <output_directory value="$PROJECT_DIR$/bin" />
+    <method v="2" />
+  </configuration>
+</component>
