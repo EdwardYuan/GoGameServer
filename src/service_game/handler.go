@@ -4,7 +4,6 @@ import (
 	"GoGameServer/src/game"
 	"GoGameServer/src/lib"
 	"GoGameServer/src/protocol"
-	"GoGameServer/src/service_common"
 	"fmt"
 	"google.golang.org/protobuf/proto"
 )
@@ -18,23 +17,42 @@ type ClientInfo struct{}
 
 type ClientCloseReason int
 
+const (
+	ClientCloseNormal ClientCloseReason = iota
+	ClientCloseKill
+)
+
 type Client struct {
 	info            ClientInfo
 	PlayerSessionId uint64
 	account         string
-	service         service_common.Service
 	agent           *game.Agent
 	Recv            chan []byte
 	closeChan       chan ClientCloseReason
+	closed          bool
 }
 
-func (gs *GameServer) NewClient() *Client {
+func (gs *GameServer) NewClient(session *lib.Session, playerId int64) *Client {
 	client := new(Client)
+	agent := gs.AgentManager.NewAgent(session, playerId)
+	client.agent = agent
 	gs.clients[client.PlayerSessionId] = client
 	return client
 }
 
+func (c *Client) Start() (err error) {
+	c.run()
+	return
+}
+
+func (c *Client) Stop() (err error) {
+	c.closeChan <- ClientCloseNormal
+	return
+}
+
 func (c *Client) run() {
+	defer close(c.Recv)
+	go c.agent.Run()
 	for {
 		select {
 		case data := <-c.Recv:
@@ -68,6 +86,14 @@ func (c *Client) run() {
 						//Todo 退出游戏
 					}
 				}
+			}
+		case reason, _ := <-c.closeChan:
+			switch reason {
+			case ClientCloseNormal:
+				c.agent.CloseChan <- 1
+				// 连接关闭agent可以继续存在
+				c.closed = true
+				return
 			}
 		}
 	}
