@@ -1,12 +1,15 @@
 package codec
 
-import "github.com/panjf2000/gnet"
+import (
+	"github.com/panjf2000/gnet"
+)
 
 // CodecProtobuf protocol buffer解码
 type CodecProtobuf struct {
 }
 
 func (cp CodecProtobuf) Encode(c gnet.Conn, buf []byte) ([]byte, error) {
+
 	return buf, nil
 }
 

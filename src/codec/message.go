@@ -55,6 +55,6 @@ func (sh *ServerMessageHead) Encode(buf []byte) {
 	binary.BigEndian.PutUint32(buf[16:], uint32(sh.OnLineIdx))
 }
 
-func (sh *ServerMessageHead) Check() error {
-	return nil
+func (sh *ServerMessageHead) Check() (finished bool, err error) {
+	return true, nil
 }

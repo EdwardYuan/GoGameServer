@@ -2,9 +2,7 @@ package codec
 
 import (
 	"GoGameServer/src/lib"
-
 	"github.com/panjf2000/gnet"
-	"go.uber.org/zap"
 )
 
 //MsgCode实现gnet的Codec接口
@@ -34,11 +32,11 @@ func (mc *MsgCodec) Decode(c gnet.Conn) ([]byte, error) {
 	head := new(ServerMessageHead)
 	head.Decode(buf)
 	// TODO 校验包头
-	err = head.Check()
-	if err != nil {
-		lib.Log(zap.ErrorLevel, "decode message head error", err)
-		return nil, err
+	if ok, err := head.Check(); !ok {
+		lib.LogIfError(err, "decode message head error")
 	}
+	// 读取包头完成
+	//idx := unsafe.Sizeof(head)
 	data, err := in.readN(head.DataLength)
 	in = append(in, data...)
 	if err != nil {
