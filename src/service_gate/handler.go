@@ -1,6 +1,7 @@
 package service_gate
 
-import "google.golang.org/protobuf/proto"
+//import "google.golang.org/protobuf/proto"
+import "github.com/gogo/protobuf/proto"
 
 type MessageHandler struct {
 }
