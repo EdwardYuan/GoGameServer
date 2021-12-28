@@ -7,7 +7,7 @@ import (
 
 const (
 	ServerMaxReceiveLength = 255 * 1024
-	MessageHeadLength      = 19
+	MessageHeadLength      = 32
 )
 
 type ServerMessageHead struct {
@@ -42,8 +42,9 @@ func (sh *ServerMessageHead) Decode(buf []byte) {
 	sh.PieceFlag = buf[5]
 	sh.Flag = buf[6]
 	sh.Cmd = buf[7]
-	sh.DataLength = int(binary.LittleEndian.Uint32(buf[8:11]))
-	sh.OnLineIdx = int(binary.LittleEndian.Uint32(buf[16:]))
+	sh.DataLength = int(binary.LittleEndian.Uint64(buf[8:16]))
+	sh.SocketHandle = int(binary.LittleEndian.Uint64(buf[16:24]))
+	sh.OnLineIdx = int(binary.LittleEndian.Uint64(buf[24:32]))
 }
 
 func (sh *ServerMessageHead) Encode(buf []byte) {
@@ -51,8 +52,8 @@ func (sh *ServerMessageHead) Encode(buf []byte) {
 	buf[5] = sh.PieceFlag
 	buf[6] = sh.Flag
 	buf[7] = sh.Cmd
-	binary.BigEndian.PutUint32(buf[8:11], uint32(sh.DataLength))
-	binary.BigEndian.PutUint32(buf[16:], uint32(sh.OnLineIdx))
+	binary.BigEndian.PutUint32(buf[8:12], uint32(sh.DataLength))
+	binary.BigEndian.PutUint32(buf[12:16], uint32(sh.OnLineIdx))
 }
 
 func (sh *ServerMessageHead) Check() (finished bool, err error) {

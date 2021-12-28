@@ -8,7 +8,7 @@ import (
 	"runtime/debug"
 	"strings"
 
-	"github.com/gogo/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 )
 
 var ErrUnknown = errors.New("unknown error")
@@ -88,7 +88,7 @@ var (
 	encGame EncGame
 )
 
-var encMethods map[string]reflect.Value = map[string]reflect.Value{}
+var encMethods = map[string]reflect.Value{}
 
 func init() {
 	//	registerEncoder(encBattle)

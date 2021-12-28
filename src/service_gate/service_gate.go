@@ -2,12 +2,13 @@ package service_gate
 
 import (
 	"GoGameServer/src/codec"
+	"GoGameServer/src/global"
 	"GoGameServer/src/lib"
 	"GoGameServer/src/pb"
 	"GoGameServer/src/service_common"
 	"fmt"
-	"github.com/gogo/protobuf/proto"
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/proto"
 	"net"
 	"sync"
 
@@ -63,8 +64,9 @@ func (s *ServiceGate) Start() (err error) {
 	defer s.workPool.Release()
 	go func(gg *ServiceGate) {
 		err = gnet.Serve(gg, lib.GNetAddr, gnet.WithMulticore(true),
+			gnet.WithCodec(codec.MsgCodec{}),
 			//gnet.WithCodec(gnet.NewFixedLengthFrameCodec(5)),
-			gnet.WithCodec(codec.CodecProtobuf{}),
+			//gnet.WithCodec(codec.CodecProtobuf{}),
 			gnet.WithLogger(lib.SugarLogger))
 		lib.FatalOnError(err, "fatal: start gnet error")
 		lib.Log(zap.InfoLevel, "gnet listening", err)
@@ -83,64 +85,52 @@ func (s *ServiceGate) Start() (err error) {
 }
 
 func (s *ServiceGate) React(frame []byte, c gnet.Conn) (out []byte, action gnet.Action) {
-	// lib.Log(zap.DebugLevel, string(frame), nil)
+	lib.SugarLogger.Infof("len of frame is %d", len(frame))
+	lib.SugarLogger.Infof(fmt.Sprintf("data is %s", frame))
+	out = frame
 
-	msg := &pb.Person1{}
-	err := proto.Unmarshal(frame, msg)
-	if err != nil {
-		fmt.Println(err)
+	var err error
+	if s.workPool == nil {
+		s.workPool, err = ants.NewPool(global.DefaultPoolSize)
+		lib.LogIfError(err, "service gate new pool error")
 	}
-
-	//lib.SugarLogger.Info(msg)
-	fmt.Printf("id %d, name %s, email %s", msg.Id, msg.Name, msg.Email)
-
-	/*
-		var err error
-		if s.workPool == nil {
-			s.workPool, err = ants.NewPool(global.DefaultPoolSize)
-			lib.LogIfError(err, "service gate new pool error")
-		}
-		if s.workPool != nil && err == nil {
-			s.wg.Add(1)
-			go func() {
-				err := s.workPool.Submit(func() {
-					// session := lib.NewSession(c)
-					//headReader := lib.NewMessageHeadReader()
-					//headReader.Head.Decode(frame)
-					//if headReader.Head.Check() != nil {
-					//	return
-					//}
-					//headReader.ReadMessage(frame[headReader.Head.HeaderLength:])
-					//switch headReader.Head.Command {
-					//case lib.NetMsgToGame:
-					//	s.SendToGame(headReader.Data)
-					//case lib.NetMsgToLogin:
-					//	s.SendToLogin(headReader.Data)
-					//case lib.NetMsgToDB:
-					//	s.SendToDB(headReader.Data)
-					//default:
-					//	return
-					//}
-					//var message proto.Message
-					var msg *pb.Person1
-					err := proto.Unmarshal(frame, msg)
-					if err != nil {
-						fmt.Println(err)
-					}
-					//lib.LogIfError(err, "unmarshal message error")
-					//if !s.h.Check(message) {
-					//	return
-					//}
-					//lib.SugarLogger.Info(msg)
-				})
-				if err != nil {
-					lib.Log(zap.ErrorLevel, "submit message pool error", err)
+	if s.workPool != nil && err == nil {
+		s.wg.Add(1)
+		go func() {
+			err := s.workPool.Submit(func() {
+				// session := lib.NewSession(c)
+				//headReader := lib.NewMessageHeadReader()
+				//headReader.Head.Decode(frame)
+				//if headReader.Head.Check() != nil {
+				//	return
+				//}
+				//headReader.ReadMessage(frame[headReader.Head.HeaderLength:])
+				//switch headReader.Head.Command {
+				//case lib.NetMsgToGame:
+				//	s.SendToGame(headReader.Data)
+				//case lib.NetMsgToLogin:
+				//	s.SendToLogin(headReader.Data)
+				//case lib.NetMsgToDB:
+				//	s.SendToDB(headReader.Data)
+				//default:
+				//	return
+				//}
+				//var message proto.Message
+				var msg *pb.Person1
+				err := proto.Unmarshal(frame, msg)
+				lib.LogIfError(err, "unmarshal message error")
+				if !s.h.Check(msg) {
+					return
 				}
-				s.wg.Done()
-			}()
-			s.wg.Wait()
-		}
-	*/
+				lib.SugarLogger.Info(msg)
+			})
+			if err != nil {
+				lib.Log(zap.ErrorLevel, "submit message pool error", err)
+			}
+			s.wg.Done()
+		}()
+		s.wg.Wait()
+	}
 	return
 }
 

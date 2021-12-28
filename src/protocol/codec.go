@@ -6,9 +6,7 @@ import (
 	"errors"
 	"reflect"
 
-	"github.com/gogo/protobuf/proto"
-	// "pb/dict"
-	// "pb/packet"
+	"google.golang.org/protobuf/proto"
 )
 
 type Message struct {
@@ -17,11 +15,12 @@ type Message struct {
 }
 
 func (m *Message) Type() string {
-	return proto.MessageName(m.Body)
+	return string(proto.MessageName(m.Body))
 }
 
 func nameToType(name string) (reflect.Type, bool) {
-	msgType := proto.MessageType(name)
+	//msgType := proto.MessageType(name)
+	var msgType reflect.Type
 	if msgType == nil {
 		return nil, false
 	}

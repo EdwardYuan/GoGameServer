@@ -15,5 +15,7 @@ func (cp CodecProtobuf) Encode(c gnet.Conn, buf []byte) ([]byte, error) {
 
 func (cp CodecProtobuf) Decode(c gnet.Conn) ([]byte, error) {
 	in := c.Read()
+	idx := len(in)
+	c.ShiftN(idx)
 	return in, nil
 }
