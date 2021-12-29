@@ -28,6 +28,8 @@ func (mc MsgCodec) Decode(c gnet.Conn) ([]byte, error) {
 	)
 	headlen := int(unsafe.Sizeof(ServerMessageHead{}))
 	in = c.Read()
+	//size, in := c.ReadN(headlen)
+	lib.SugarLogger.Infof("read buffer length %d", headlen)
 	buf, err := in.readN(headlen) //in.readN(MessageHeadLength)
 	if err != nil {
 		return nil, err
@@ -40,7 +42,15 @@ func (mc MsgCodec) Decode(c gnet.Conn) ([]byte, error) {
 	}
 	// 读取包头完成
 	//idx := unsafe.Sizeof(head)
-	data, err := in.readN(head.DataLength)
+
+	c.ShiftN(headlen)
+	lib.SugarLogger.Infof("size is %d", head)
+	//size, offset := c.ReadN(1)
+	//c.ShiftN(size)
+	//lib.Log(zap.InfoLevel, string(offset), nil)
+
+	//size, data := c.ReadN(head.DataLength)
+	data, err := in.read(headlen+1, headlen+1+head.DataLength)
 	in = append(in, data...)
 	if err != nil {
 		return nil, err
@@ -48,5 +58,5 @@ func (mc MsgCodec) Decode(c gnet.Conn) ([]byte, error) {
 	// TODO 校验包体
 	// 返回的是一个完整的消息体
 	c.ShiftN(MessageHeadLength + head.DataLength)
-	return in, err
+	return data, err
 }

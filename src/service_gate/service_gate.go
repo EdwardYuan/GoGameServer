@@ -86,7 +86,7 @@ func (s *ServiceGate) Start() (err error) {
 
 func (s *ServiceGate) React(frame []byte, c gnet.Conn) (out []byte, action gnet.Action) {
 	lib.SugarLogger.Infof("len of frame is %d", len(frame))
-	lib.SugarLogger.Infof(fmt.Sprintf("data is %s", frame))
+	lib.SugarLogger.Infof(fmt.Sprintf("data is %s", string(frame)))
 	out = frame
 
 	var err error
@@ -115,13 +115,15 @@ func (s *ServiceGate) React(frame []byte, c gnet.Conn) (out []byte, action gnet.
 				//default:
 				//	return
 				//}
+
 				//var message proto.Message
-				var msg *pb.Person1
+				msg := &pb.Person1{}
 				err := proto.Unmarshal(frame, msg)
 				lib.LogIfError(err, "unmarshal message error")
 				if !s.h.Check(msg) {
 					return
 				}
+				//msg := string(frame)
 				lib.SugarLogger.Info(msg)
 			})
 			if err != nil {

@@ -33,18 +33,32 @@ func (in *inBuffer) readN(n int) (buf []byte, err error) {
 		return nil, errors.New("exceeding buffer length")
 	}
 	buf = (*in)[:n]
-	*in = (*in)[n:]
+	//*in = (*in)[n:]
+	return
+}
+
+func (in *inBuffer) read(begin, end int) (buf []byte, err error) {
+	if begin*end <= 0 {
+		return nil, errors.New("negative index")
+	}
+	if end <= begin {
+		return nil, errors.New("end of buffer less than begin")
+	}
+	if end > len(*in) {
+		return nil, errors.New("exceeding buffer length")
+	}
+	buf = (*in)[begin:end]
 	return
 }
 
 func (sh *ServerMessageHead) Decode(buf []byte) {
 	sh.Sign = binary.LittleEndian.Uint32(buf[:4])
-	sh.PieceFlag = buf[5]
-	sh.Flag = buf[6]
-	sh.Cmd = buf[7]
-	sh.DataLength = int(binary.LittleEndian.Uint64(buf[8:16]))
-	sh.SocketHandle = int(binary.LittleEndian.Uint64(buf[16:24]))
-	sh.OnLineIdx = int(binary.LittleEndian.Uint64(buf[24:32]))
+	sh.PieceFlag = buf[4]
+	sh.Flag = buf[5]
+	sh.Cmd = buf[6]
+	sh.DataLength = int(binary.LittleEndian.Uint64(buf[7:15]))
+	sh.SocketHandle = int(binary.LittleEndian.Uint64(buf[15:23]))
+	sh.OnLineIdx = int(binary.LittleEndian.Uint64(buf[23:31]))
 }
 
 func (sh *ServerMessageHead) Encode(buf []byte) {
