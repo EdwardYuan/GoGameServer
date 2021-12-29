@@ -1,6 +1,7 @@
 package service_game
 
 import (
+	"GoGameServer/src/codec"
 	"GoGameServer/src/game"
 	"GoGameServer/src/lib"
 	"GoGameServer/src/protocol"
@@ -9,8 +10,8 @@ import (
 )
 
 type handler interface {
-	Unmarshal(buf []byte) lib.Message
-	Marshal(m lib.Message) []byte
+	Unmarshal(buf []byte) codec.ServerMessageHead
+	Marshal(m proto.Message) []byte
 }
 
 type ClientInfo struct{}

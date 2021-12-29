@@ -10,8 +10,11 @@ import (
 )
 
 type Message struct {
-	ID   int32
-	Body proto.Message
+	SessionId uint64
+	Command   uint32
+	ID        int32
+	Body      proto.Message
+	Data      []byte
 }
 
 func (m *Message) Type() string {

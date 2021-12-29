@@ -124,7 +124,9 @@ func (s *ServiceGate) React(frame []byte, c gnet.Conn) (out []byte, action gnet.
 					return
 				}
 				//msg := string(frame)
-				lib.SugarLogger.Info(msg)
+				lib.SugarLogger.Info(msg.Id)
+				lib.SugarLogger.Info(msg.Name)
+				lib.SugarLogger.Info(msg.Email)
 			})
 			if err != nil {
 				lib.Log(zap.ErrorLevel, "submit message pool error", err)

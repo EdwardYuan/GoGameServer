@@ -5,6 +5,7 @@ import (
 	"GoGameServer/src/global"
 	"GoGameServer/src/lib"
 	"GoGameServer/src/pb"
+	"GoGameServer/src/protocol"
 	"GoGameServer/src/service_common"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
@@ -21,7 +22,7 @@ type GameServer struct {
 	gateConn     net.Conn
 	dbConn       net.Conn
 	proxyConn    net.Conn
-	recvChan     chan lib.Message
+	recvChan     chan protocol.Message
 	clients      map[uint64]*Client
 	AgentManager *game.AgentManager
 }
@@ -134,7 +135,7 @@ func (gs *GameServer) Run() {
 	}
 }
 
-func (gs *GameServer) OnMessageReceived(msg lib.Message) {
+func (gs *GameServer) OnMessageReceived(msg protocol.Message) {
 	protoMessage := &pb.ProtoInternal{}
 	switch msg.Command {
 	case pb.CMD_INTERNAL_PLAYER_LOGIN:

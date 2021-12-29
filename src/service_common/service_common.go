@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/spf13/viper"
-	"go.uber.org/zap"
 )
 
 type Service interface {
@@ -48,21 +47,21 @@ func (s *ServerCommon) Start() {
 	s.SvrTick = time.NewTicker(time.Duration(time.Millisecond))
 }
 
-func (s *ServerCommon) Encode(msg lib.Message) (data []byte, err error) {
-	return
-}
-
-func (s *ServerCommon) Decode(data []byte) (msg lib.Message, err error) {
-	head := lib.NewMessageHead()
-	head.Decode(data)
-	err = head.Check()
-
-	lib.Log(zap.ErrorLevel, "Decode Message Data Error: ", err)
-	return
-}
-
-func (s *ServerCommon) HandleMessage(msg lib.Message) {
-	go func() {
-
-	}()
-}
+//func (s *ServerCommon) Encode(msg lib.Message) (data []byte, err error) {
+//	return
+//}
+//
+//func (s *ServerCommon) Decode(data []byte) (msg lib.Message, err error) {
+//	head := lib.NewMessageHead()
+//	head.Decode(data)
+//	err = head.Check()
+//
+//	lib.Log(zap.ErrorLevel, "Decode Message Data Error: ", err)
+//	return
+//}
+//
+//func (s *ServerCommon) HandleMessage(msg lib.Message) {
+//	go func() {
+//
+//	}()
+//}
