@@ -57,6 +57,14 @@ func LogIfError(err error, msg string) {
 	}
 }
 
+func LogErrorAndReturn(err error, msg string) (isErr bool) {
+	if err != nil {
+		Log(zap.ErrorLevel, msg, err)
+		return true
+	}
+	return false
+}
+
 func Log(logLevel zapcore.Level, msg string, err error) {
 	if err != nil {
 		SugarLogger.Errorf(msg, err)

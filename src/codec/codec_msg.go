@@ -3,12 +3,10 @@ package codec
 import (
 	"GoGameServer/src/lib"
 	"github.com/panjf2000/gnet"
-	"unsafe"
 )
 
-//MsgCode实现gnet的Codec接口
+//MsgCodec 实现gnet的Codec接口
 type MsgCodec struct {
-	//Head   lib.MessageHead
 	Head   ServerMessageHead
 	Offset uint8
 	Data   []byte
@@ -26,11 +24,10 @@ func (mc MsgCodec) Decode(c gnet.Conn) ([]byte, error) {
 		in  inBuffer
 		err error
 	)
-	headlen := int(unsafe.Sizeof(ServerMessageHead{}))
+
 	in = c.Read()
-	//size, in := c.ReadN(headlen)
-	lib.SugarLogger.Infof("read buffer length %d", headlen)
-	buf, err := in.readN(headlen) //in.readN(MessageHeadLength)
+	lib.SugarLogger.Infof("read buffer length %d", MessageHeadLength)
+	buf, err := in.readN(MessageHeadLength)
 	if err != nil {
 		return nil, err
 	}
@@ -41,20 +38,13 @@ func (mc MsgCodec) Decode(c gnet.Conn) ([]byte, error) {
 		lib.LogIfError(err, "decode message head error")
 	}
 	// 读取包头完成
-	//idx := unsafe.Sizeof(head)
-
-	c.ShiftN(headlen)
+	c.ShiftN(MessageHeadLength)
 	lib.SugarLogger.Infof("size is %d", head)
-	//size, offset := c.ReadN(1)
-	//c.ShiftN(size)
-	//lib.Log(zap.InfoLevel, string(offset), nil)
-
-	//size, data := c.ReadN(head.DataLength)
-	data, err := in.read(headlen+1, headlen+1+head.DataLength)
-	in = append(in, data...)
-	if err != nil {
+	data, err := in.read(MessageHeadLength+1, MessageHeadLength+1+head.DataLength)
+	if lib.LogErrorAndReturn(err, "decode message error") {
 		return nil, err
 	}
+	in = append(in, data...)
 	// TODO 校验包体
 	// 返回的是一个完整的消息体
 	c.ShiftN(MessageHeadLength + head.DataLength)

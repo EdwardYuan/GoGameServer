@@ -21,7 +21,13 @@ func (m *Message) Type() string {
 	return string(proto.MessageName(m.Body))
 }
 
+var protoTypesNils map[string]proto.Message
+
 func nameToType(name string) (reflect.Type, bool) {
+	if t, ok := protoTypesNils[name]; ok {
+		return reflect.TypeOf(t), true
+	}
+
 	//msgType := proto.MessageType(name)
 	var msgType reflect.Type
 	if msgType == nil {

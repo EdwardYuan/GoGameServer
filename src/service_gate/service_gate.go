@@ -6,7 +6,6 @@ import (
 	"GoGameServer/src/lib"
 	"GoGameServer/src/pb"
 	"GoGameServer/src/service_common"
-	"fmt"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 	"net"
@@ -85,10 +84,6 @@ func (s *ServiceGate) Start() (err error) {
 }
 
 func (s *ServiceGate) React(frame []byte, c gnet.Conn) (out []byte, action gnet.Action) {
-	lib.SugarLogger.Infof("len of frame is %d", len(frame))
-	lib.SugarLogger.Infof(fmt.Sprintf("data is %s", string(frame)))
-	out = frame
-
 	var err error
 	if s.workPool == nil {
 		s.workPool, err = ants.NewPool(global.DefaultPoolSize)
@@ -123,7 +118,6 @@ func (s *ServiceGate) React(frame []byte, c gnet.Conn) (out []byte, action gnet.
 				if !s.h.Check(msg) {
 					return
 				}
-				//msg := string(frame)
 				lib.SugarLogger.Info(msg.Id)
 				lib.SugarLogger.Info(msg.Name)
 				lib.SugarLogger.Info(msg.Email)
