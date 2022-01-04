@@ -1,14 +1,18 @@
 package service_proxy
 
 import (
+	"GoGameServer/src/codec"
+	"GoGameServer/src/config"
 	"GoGameServer/src/lib"
 	"context"
 	"errors"
 	"fmt"
+	"github.com/panjf2000/ants/v2"
+	"github.com/panjf2000/gnet"
+	client "go.etcd.io/etcd/client/v3"
+	"google.golang.org/protobuf/proto"
 	"strconv"
 	"time"
-
-	client "go.etcd.io/etcd/client/v3"
 )
 
 // 代理服务，主要用于服务注册与发现, 消息分发
@@ -17,6 +21,8 @@ type ServiceProxy struct {
 	info      Serverinfo // 服务端信息
 	Servers   map[string]*Serverinfo
 	Agent     *EtcdAgent
+	workPool  *ants.Pool
+	gnet.EventHandler
 }
 
 type EtcdAgent struct {
@@ -42,11 +48,14 @@ func NewEtcdAgent() *EtcdAgent {
 }
 
 func NewServiceProxy(_name string, id int) *ServiceProxy {
+	pool, err := ants.NewPool(ants.DefaultAntsPoolSize)
+	lib.FatalOnError(err, "Create Proxy Service error")
 	return &ServiceProxy{
 		ProcessId: 0, // 自己的ProcessId为0
 		info:      NewServerInfo(int32(id), lib.GetLocalIP(lib.IPv4), _name, 0),
 		Servers:   make(map[string]*Serverinfo, 1),
 		Agent:     NewEtcdAgent(),
+		workPool:  pool,
 	}
 }
 
@@ -79,7 +88,22 @@ func (c *EtcdAgent) run(s *Serverinfo) {
 func (p *ServiceProxy) Start() (err error) {
 	p.Agent.Proxy = p
 	p.AddrServer(&p.info) // 首先添加自身服务到etcd
+	if gnet.Serve(p, config.ProxyAddr, gnet.WithCodec(codec.MsgCodec{}),
+		gnet.WithMulticore(true)) != nil {
+		lib.FatalOnError(err, "Proxy Serve error")
+	}
 	p.Run()
+	return
+}
+
+func (p *ServiceProxy) React(frame []byte, c gnet.Conn) (out []byte, action gnet.Action) {
+	go p.workPool.Submit(
+		func() {
+			var message *proto.Message
+			err := proto.Unmarshal(frame, *message)
+			lib.LogErrorAndReturn(err, "Service proxy handle Packet")
+
+		})
 	return
 }
 

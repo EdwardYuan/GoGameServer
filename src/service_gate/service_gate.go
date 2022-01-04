@@ -5,6 +5,7 @@ import (
 	"GoGameServer/src/global"
 	"GoGameServer/src/lib"
 	"GoGameServer/src/pb"
+	"GoGameServer/src/protocol"
 	"GoGameServer/src/service_common"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
@@ -71,14 +72,6 @@ func (s *ServiceGate) Start() (err error) {
 		lib.Log(zap.InfoLevel, "gnet listening", err)
 	}(s)
 
-	//li, err := net.Listen("tcp", "127.0.0.1:8890")
-	//lib.LogIfError(err, "listen to connect error")
-	//conn, err := li.Accept()
-	//lib.LogIfError(err, "accept connection error")
-	//TODO retry
-	//if conn != nil {
-	//	s.gsConn = &conn
-	//}
 	s.Run()
 	return
 }
@@ -149,6 +142,10 @@ func (s *ServiceGate) Run() {
 			close(s.CloseChan)
 		}
 	}
+}
+
+func (s *ServiceGate) SendToProxy(msg *protocol.Message) {
+
 }
 
 func (s *ServiceGate) LoadConfig(path string) error {

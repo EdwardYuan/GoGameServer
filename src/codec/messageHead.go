@@ -49,6 +49,13 @@ func (in *inBuffer) read(begin, end int) (buf []byte, err error) {
 	return
 }
 
+func (in *inBuffer) ShiftN(n int) {
+	if n < 0 || n >= len(*in) {
+		return
+	}
+	*in = (*in)[n:]
+}
+
 func (sh *ServerMessageHead) Decode(buf []byte) {
 	sh.Flag = buf[0]
 	sh.PieceFlag = buf[1]

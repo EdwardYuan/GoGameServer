@@ -26,7 +26,7 @@ func (mc MsgCodec) Decode(c gnet.Conn) ([]byte, error) {
 	)
 
 	in = c.Read()
-	lib.SugarLogger.Infof("read buffer length %d", MessageHeadLength)
+	lib.SugarLogger.Debugf("read buffer length %d", MessageHeadLength)
 	buf, err := in.readN(MessageHeadLength)
 	if err != nil {
 		return nil, err
@@ -39,7 +39,7 @@ func (mc MsgCodec) Decode(c gnet.Conn) ([]byte, error) {
 	}
 	// 读取包头完成
 	c.ShiftN(MessageHeadLength)
-	lib.SugarLogger.Infof("size is %d", head)
+	lib.SugarLogger.Debugf("size is %d", head)
 	data, err := in.read(MessageHeadLength+1, MessageHeadLength+1+head.DataLength)
 	if lib.LogErrorAndReturn(err, "decode message error") {
 		return nil, err

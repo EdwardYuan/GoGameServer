@@ -11,4 +11,5 @@ var (
 	MySqlUrl       string
 	EtcdUrl        string
 	DBServiceAddr  string
+	ProxyAddr      string
 )

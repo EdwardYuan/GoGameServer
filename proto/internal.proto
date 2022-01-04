@@ -1,8 +1,6 @@
 syntax = "proto3";
 package pb;
 
-import "google/protobuf/timestamp.proto";
-
 option go_package="/pb";
 
 message ProtoInternal {

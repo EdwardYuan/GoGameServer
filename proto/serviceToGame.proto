@@ -1,0 +1,10 @@
+syntax = "proto3";
+package pb;
+
+option go_package="/pb";
+
+message PbServiceToGame {
+  int32 CMD = 1;
+  bool IsToAgent = 2;
+  bytes Data = 3;
+}
