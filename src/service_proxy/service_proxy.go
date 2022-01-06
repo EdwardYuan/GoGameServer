@@ -99,10 +99,10 @@ func (p *ServiceProxy) Start() (err error) {
 func (p *ServiceProxy) React(frame []byte, c gnet.Conn) (out []byte, action gnet.Action) {
 	go p.workPool.Submit(
 		func() {
-			var message *proto.Message
-			err := proto.Unmarshal(frame, *message)
+			var message proto.Message
+			err := proto.Unmarshal(frame, message)
 			lib.LogErrorAndReturn(err, "Service proxy handle Packet")
-
+			lib.SugarLogger.Info(message)
 		})
 	return
 }

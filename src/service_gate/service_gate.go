@@ -5,7 +5,6 @@ import (
 	"GoGameServer/src/global"
 	"GoGameServer/src/lib"
 	"GoGameServer/src/pb"
-	"GoGameServer/src/protocol"
 	"GoGameServer/src/service_common"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
@@ -21,9 +20,11 @@ type ServiceGate struct {
 	workPool *ants.Pool
 	wg       sync.WaitGroup
 	*service_common.ServerCommon
-	gsConn  *net.Conn
-	runChan chan bool
-	h       MessageHandler
+	gsConn    net.Conn
+	proxyLi   net.Listener
+	proxyConn net.Conn
+	runChan   chan bool
+	h         MessageHandler
 	*gnet.EventServer
 }
 
@@ -61,7 +62,17 @@ func (s *ServiceGate) Error() string {
 func (s *ServiceGate) Start() (err error) {
 	lib.SugarLogger.Info("Service Gate Start: ", s.Name)
 	s.ServerCommon.Start()
-	defer s.workPool.Release()
+	go func() {
+		s.proxyLi, err = net.Listen("tcp", "127.0.0.1:9001")
+		lib.LogErrorAndReturn(err, "Service Gate listen ")
+		s.proxyConn, err = s.proxyLi.Accept()
+		lib.LogIfError(err, "Accept Proxy error")
+	}()
+	defer func() {
+		s.workPool.Release()
+		s.gsConn.Close()
+		s.proxyConn.Close()
+	}()
 	go func(gg *ServiceGate) {
 		err = gnet.Serve(gg, lib.GNetAddr, gnet.WithMulticore(true),
 			gnet.WithCodec(codec.MsgCodec{}),
@@ -104,16 +115,26 @@ func (s *ServiceGate) React(frame []byte, c gnet.Conn) (out []byte, action gnet.
 				//	return
 				//}
 
-				//var message proto.Message
-				msg := &pb.Person1{}
-				err := proto.Unmarshal(frame, msg)
-				lib.LogIfError(err, "unmarshal message error")
-				if !s.h.Check(msg) {
-					return
+				/*
+					//var message proto.Message
+					msg := &pb.Person1{}
+					err := proto.Unmarshal(frame, msg)
+					lib.LogIfError(err, "unmarshal message error")
+					if !s.h.Check(msg) {
+						return
+					}
+					lib.SugarLogger.Info(msg.Id)
+					lib.SugarLogger.Info(msg.Name)
+					lib.SugarLogger.Info(msg.Email)
+				*/
+				msg := &pb.ProtoInternal{}
+				err = proto.Unmarshal(frame, msg)
+				lib.LogErrorAndReturn(err, "")
+				switch msg.Cmd {
+				case pb.InternalGateToProxy:
+					s.SendToProxy(frame)
 				}
-				lib.SugarLogger.Info(msg.Id)
-				lib.SugarLogger.Info(msg.Name)
-				lib.SugarLogger.Info(msg.Email)
+				//s.SendToProxy(msg)
 			})
 			if err != nil {
 				lib.Log(zap.ErrorLevel, "submit message pool error", err)
@@ -144,8 +165,10 @@ func (s *ServiceGate) Run() {
 	}
 }
 
-func (s *ServiceGate) SendToProxy(msg *protocol.Message) {
-
+func (s *ServiceGate) SendToProxy(data []byte) {
+	if s.proxyConn != nil {
+		s.proxyConn.Write(data)
+	}
 }
 
 func (s *ServiceGate) LoadConfig(path string) error {

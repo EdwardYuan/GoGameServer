@@ -2,7 +2,9 @@ package codec
 
 import (
 	"GoGameServer/src/lib"
+	"GoGameServer/src/pb"
 	"github.com/panjf2000/gnet"
+	"google.golang.org/protobuf/proto"
 )
 
 //MsgCodec 实现gnet的Codec接口
@@ -36,6 +38,7 @@ func (mc MsgCodec) Decode(c gnet.Conn) ([]byte, error) {
 	// TODO 校验包头
 	if ok, err := head.Check(); !ok {
 		lib.LogIfError(err, "decode message head error")
+		// 丢弃
 	}
 	// 读取包头完成
 	c.ShiftN(MessageHeadLength)
@@ -44,9 +47,15 @@ func (mc MsgCodec) Decode(c gnet.Conn) ([]byte, error) {
 	if lib.LogErrorAndReturn(err, "decode message error") {
 		return nil, err
 	}
-	in = append(in, data...)
+	outMsg := &pb.ProtoInternal{
+		Cmd:       int32(head.Cmd),
+		SessionId: 0,
+		Data:      data,
+	}
+	//in = append(in, data...)
+	out, err := proto.Marshal(outMsg)
 	// TODO 校验包体
 	// 返回的是一个完整的消息体
 	c.ShiftN(MessageHeadLength + head.DataLength)
-	return data, err
+	return out, err
 }

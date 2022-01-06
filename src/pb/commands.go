@@ -5,3 +5,16 @@ const (
 	CMD_INTERNAL_PLAYER_LOGOUT
 	CMD_INTERNAL_PLAYER_TO_GAME_MESSAGE
 )
+
+type PbInternalCmd int32
+
+const (
+	InternalGateToProxy = iota
+	InternalProxyToGate
+	InternalProxyToGame
+	InternalGameToProxy
+	InternalProxySync
+	InternalRPC
+	InternalGameToService
+	InternalServiceToGame
+)
