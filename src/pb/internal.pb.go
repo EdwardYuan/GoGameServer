@@ -83,6 +83,445 @@ func (x *ProtoInternal) GetData() []byte {
 	return nil
 }
 
+type GateToProxy struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Cmd       int32  `protobuf:"varint,1,opt,name=Cmd,proto3" json:"Cmd,omitempty"`
+	SessionId uint64 `protobuf:"varint,2,opt,name=SessionId,proto3" json:"SessionId,omitempty"`
+	IsToAgent bool   `protobuf:"varint,3,opt,name=IsToAgent,proto3" json:"IsToAgent,omitempty"`
+	UserId    int64  `protobuf:"varint,4,opt,name=UserId,proto3" json:"UserId,omitempty"`
+	Data      []byte `protobuf:"bytes,5,opt,name=Data,proto3" json:"Data,omitempty"`
+}
+
+func (x *GateToProxy) Reset() {
+	*x = GateToProxy{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_internal_proto_msgTypes[1]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *GateToProxy) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GateToProxy) ProtoMessage() {}
+
+func (x *GateToProxy) ProtoReflect() protoreflect.Message {
+	mi := &file_internal_proto_msgTypes[1]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GateToProxy.ProtoReflect.Descriptor instead.
+func (*GateToProxy) Descriptor() ([]byte, []int) {
+	return file_internal_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *GateToProxy) GetCmd() int32 {
+	if x != nil {
+		return x.Cmd
+	}
+	return 0
+}
+
+func (x *GateToProxy) GetSessionId() uint64 {
+	if x != nil {
+		return x.SessionId
+	}
+	return 0
+}
+
+func (x *GateToProxy) GetIsToAgent() bool {
+	if x != nil {
+		return x.IsToAgent
+	}
+	return false
+}
+
+func (x *GateToProxy) GetUserId() int64 {
+	if x != nil {
+		return x.UserId
+	}
+	return 0
+}
+
+func (x *GateToProxy) GetData() []byte {
+	if x != nil {
+		return x.Data
+	}
+	return nil
+}
+
+type ProxyToGate struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Cmd       int32  `protobuf:"varint,1,opt,name=Cmd,proto3" json:"Cmd,omitempty"`
+	SessionId int64  `protobuf:"varint,2,opt,name=SessionId,proto3" json:"SessionId,omitempty"`
+	UserId    int64  `protobuf:"varint,3,opt,name=UserId,proto3" json:"UserId,omitempty"`
+	Data      []byte `protobuf:"bytes,4,opt,name=Data,proto3" json:"Data,omitempty"`
+}
+
+func (x *ProxyToGate) Reset() {
+	*x = ProxyToGate{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_internal_proto_msgTypes[2]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ProxyToGate) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProxyToGate) ProtoMessage() {}
+
+func (x *ProxyToGate) ProtoReflect() protoreflect.Message {
+	mi := &file_internal_proto_msgTypes[2]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProxyToGate.ProtoReflect.Descriptor instead.
+func (*ProxyToGate) Descriptor() ([]byte, []int) {
+	return file_internal_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *ProxyToGate) GetCmd() int32 {
+	if x != nil {
+		return x.Cmd
+	}
+	return 0
+}
+
+func (x *ProxyToGate) GetSessionId() int64 {
+	if x != nil {
+		return x.SessionId
+	}
+	return 0
+}
+
+func (x *ProxyToGate) GetUserId() int64 {
+	if x != nil {
+		return x.UserId
+	}
+	return 0
+}
+
+func (x *ProxyToGate) GetData() []byte {
+	if x != nil {
+		return x.Data
+	}
+	return nil
+}
+
+type ProxyToGame struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Cmd       int32  `protobuf:"varint,1,opt,name=Cmd,proto3" json:"Cmd,omitempty"`
+	SessionId int64  `protobuf:"varint,2,opt,name=SessionId,proto3" json:"SessionId,omitempty"`
+	IsToAgent bool   `protobuf:"varint,3,opt,name=IsToAgent,proto3" json:"IsToAgent,omitempty"`
+	UserId    int64  `protobuf:"varint,4,opt,name=UserId,proto3" json:"UserId,omitempty"`
+	Data      []byte `protobuf:"bytes,5,opt,name=Data,proto3" json:"Data,omitempty"`
+}
+
+func (x *ProxyToGame) Reset() {
+	*x = ProxyToGame{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_internal_proto_msgTypes[3]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ProxyToGame) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProxyToGame) ProtoMessage() {}
+
+func (x *ProxyToGame) ProtoReflect() protoreflect.Message {
+	mi := &file_internal_proto_msgTypes[3]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProxyToGame.ProtoReflect.Descriptor instead.
+func (*ProxyToGame) Descriptor() ([]byte, []int) {
+	return file_internal_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *ProxyToGame) GetCmd() int32 {
+	if x != nil {
+		return x.Cmd
+	}
+	return 0
+}
+
+func (x *ProxyToGame) GetSessionId() int64 {
+	if x != nil {
+		return x.SessionId
+	}
+	return 0
+}
+
+func (x *ProxyToGame) GetIsToAgent() bool {
+	if x != nil {
+		return x.IsToAgent
+	}
+	return false
+}
+
+func (x *ProxyToGame) GetUserId() int64 {
+	if x != nil {
+		return x.UserId
+	}
+	return 0
+}
+
+func (x *ProxyToGame) GetData() []byte {
+	if x != nil {
+		return x.Data
+	}
+	return nil
+}
+
+type GameToProxy struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Cmd       int32  `protobuf:"varint,1,opt,name=Cmd,proto3" json:"Cmd,omitempty"`
+	SessionId int64  `protobuf:"varint,2,opt,name=SessionId,proto3" json:"SessionId,omitempty"`
+	Data      []byte `protobuf:"bytes,3,opt,name=Data,proto3" json:"Data,omitempty"`
+}
+
+func (x *GameToProxy) Reset() {
+	*x = GameToProxy{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_internal_proto_msgTypes[4]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *GameToProxy) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GameToProxy) ProtoMessage() {}
+
+func (x *GameToProxy) ProtoReflect() protoreflect.Message {
+	mi := &file_internal_proto_msgTypes[4]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GameToProxy.ProtoReflect.Descriptor instead.
+func (*GameToProxy) Descriptor() ([]byte, []int) {
+	return file_internal_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *GameToProxy) GetCmd() int32 {
+	if x != nil {
+		return x.Cmd
+	}
+	return 0
+}
+
+func (x *GameToProxy) GetSessionId() int64 {
+	if x != nil {
+		return x.SessionId
+	}
+	return 0
+}
+
+func (x *GameToProxy) GetData() []byte {
+	if x != nil {
+		return x.Data
+	}
+	return nil
+}
+
+type ProxySync struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Cmd      int32  `protobuf:"varint,1,opt,name=Cmd,proto3" json:"Cmd,omitempty"`
+	SrcProxy int32  `protobuf:"varint,2,opt,name=SrcProxy,proto3" json:"SrcProxy,omitempty"`
+	DstProxy int32  `protobuf:"varint,3,opt,name=DstProxy,proto3" json:"DstProxy,omitempty"`
+	Data     []byte `protobuf:"bytes,4,opt,name=Data,proto3" json:"Data,omitempty"`
+}
+
+func (x *ProxySync) Reset() {
+	*x = ProxySync{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_internal_proto_msgTypes[5]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ProxySync) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProxySync) ProtoMessage() {}
+
+func (x *ProxySync) ProtoReflect() protoreflect.Message {
+	mi := &file_internal_proto_msgTypes[5]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProxySync.ProtoReflect.Descriptor instead.
+func (*ProxySync) Descriptor() ([]byte, []int) {
+	return file_internal_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *ProxySync) GetCmd() int32 {
+	if x != nil {
+		return x.Cmd
+	}
+	return 0
+}
+
+func (x *ProxySync) GetSrcProxy() int32 {
+	if x != nil {
+		return x.SrcProxy
+	}
+	return 0
+}
+
+func (x *ProxySync) GetDstProxy() int32 {
+	if x != nil {
+		return x.DstProxy
+	}
+	return 0
+}
+
+func (x *ProxySync) GetData() []byte {
+	if x != nil {
+		return x.Data
+	}
+	return nil
+}
+
+type RPCMessage struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *RPCMessage) Reset() {
+	*x = RPCMessage{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_internal_proto_msgTypes[6]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *RPCMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RPCMessage) ProtoMessage() {}
+
+func (x *RPCMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_internal_proto_msgTypes[6]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RPCMessage.ProtoReflect.Descriptor instead.
+func (*RPCMessage) Descriptor() ([]byte, []int) {
+	return file_internal_proto_rawDescGZIP(), []int{6}
+}
+
+type RPCData struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *RPCData) Reset() {
+	*x = RPCData{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_internal_proto_msgTypes[7]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *RPCData) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RPCData) ProtoMessage() {}
+
+func (x *RPCData) ProtoReflect() protoreflect.Message {
+	mi := &file_internal_proto_msgTypes[7]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RPCData.ProtoReflect.Descriptor instead.
+func (*RPCData) Descriptor() ([]byte, []int) {
+	return file_internal_proto_rawDescGZIP(), []int{7}
+}
+
 var File_internal_proto protoreflect.FileDescriptor
 
 var file_internal_proto_rawDesc = []byte{
@@ -92,8 +531,45 @@ var file_internal_proto_rawDesc = []byte{
 	0x28, 0x05, 0x52, 0x03, 0x43, 0x6d, 0x64, 0x12, 0x1c, 0x0a, 0x09, 0x53, 0x65, 0x73, 0x73, 0x69,
 	0x6f, 0x6e, 0x49, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x52, 0x09, 0x53, 0x65, 0x73, 0x73,
 	0x69, 0x6f, 0x6e, 0x49, 0x64, 0x12, 0x12, 0x0a, 0x04, 0x44, 0x61, 0x74, 0x61, 0x18, 0x03, 0x20,
-	0x01, 0x28, 0x0c, 0x52, 0x04, 0x44, 0x61, 0x74, 0x61, 0x42, 0x05, 0x5a, 0x03, 0x2f, 0x70, 0x62,
-	0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x01, 0x28, 0x0c, 0x52, 0x04, 0x44, 0x61, 0x74, 0x61, 0x22, 0x87, 0x01, 0x0a, 0x0b, 0x47, 0x61,
+	0x74, 0x65, 0x54, 0x6f, 0x50, 0x72, 0x6f, 0x78, 0x79, 0x12, 0x10, 0x0a, 0x03, 0x43, 0x6d, 0x64,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x05, 0x52, 0x03, 0x43, 0x6d, 0x64, 0x12, 0x1c, 0x0a, 0x09, 0x53,
+	0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x49, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x52, 0x09,
+	0x53, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x49, 0x64, 0x12, 0x1c, 0x0a, 0x09, 0x49, 0x73, 0x54,
+	0x6f, 0x41, 0x67, 0x65, 0x6e, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x08, 0x52, 0x09, 0x49, 0x73,
+	0x54, 0x6f, 0x41, 0x67, 0x65, 0x6e, 0x74, 0x12, 0x16, 0x0a, 0x06, 0x55, 0x73, 0x65, 0x72, 0x49,
+	0x64, 0x18, 0x04, 0x20, 0x01, 0x28, 0x03, 0x52, 0x06, 0x55, 0x73, 0x65, 0x72, 0x49, 0x64, 0x12,
+	0x12, 0x0a, 0x04, 0x44, 0x61, 0x74, 0x61, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x04, 0x44,
+	0x61, 0x74, 0x61, 0x22, 0x69, 0x0a, 0x0b, 0x50, 0x72, 0x6f, 0x78, 0x79, 0x54, 0x6f, 0x47, 0x61,
+	0x74, 0x65, 0x12, 0x10, 0x0a, 0x03, 0x43, 0x6d, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x05, 0x52,
+	0x03, 0x43, 0x6d, 0x64, 0x12, 0x1c, 0x0a, 0x09, 0x53, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x49,
+	0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x03, 0x52, 0x09, 0x53, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e,
+	0x49, 0x64, 0x12, 0x16, 0x0a, 0x06, 0x55, 0x73, 0x65, 0x72, 0x49, 0x64, 0x18, 0x03, 0x20, 0x01,
+	0x28, 0x03, 0x52, 0x06, 0x55, 0x73, 0x65, 0x72, 0x49, 0x64, 0x12, 0x12, 0x0a, 0x04, 0x44, 0x61,
+	0x74, 0x61, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x04, 0x44, 0x61, 0x74, 0x61, 0x22, 0x87,
+	0x01, 0x0a, 0x0b, 0x50, 0x72, 0x6f, 0x78, 0x79, 0x54, 0x6f, 0x47, 0x61, 0x6d, 0x65, 0x12, 0x10,
+	0x0a, 0x03, 0x43, 0x6d, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x05, 0x52, 0x03, 0x43, 0x6d, 0x64,
+	0x12, 0x1c, 0x0a, 0x09, 0x53, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x49, 0x64, 0x18, 0x02, 0x20,
+	0x01, 0x28, 0x03, 0x52, 0x09, 0x53, 0x65, 0x73, 0x73, 0x69, 0x6f, 0x6e, 0x49, 0x64, 0x12, 0x1c,
+	0x0a, 0x09, 0x49, 0x73, 0x54, 0x6f, 0x41, 0x67, 0x65, 0x6e, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28,
+	0x08, 0x52, 0x09, 0x49, 0x73, 0x54, 0x6f, 0x41, 0x67, 0x65, 0x6e, 0x74, 0x12, 0x16, 0x0a, 0x06,
+	0x55, 0x73, 0x65, 0x72, 0x49, 0x64, 0x18, 0x04, 0x20, 0x01, 0x28, 0x03, 0x52, 0x06, 0x55, 0x73,
+	0x65, 0x72, 0x49, 0x64, 0x12, 0x12, 0x0a, 0x04, 0x44, 0x61, 0x74, 0x61, 0x18, 0x05, 0x20, 0x01,
+	0x28, 0x0c, 0x52, 0x04, 0x44, 0x61, 0x74, 0x61, 0x22, 0x51, 0x0a, 0x0b, 0x47, 0x61, 0x6d, 0x65,
+	0x54, 0x6f, 0x50, 0x72, 0x6f, 0x78, 0x79, 0x12, 0x10, 0x0a, 0x03, 0x43, 0x6d, 0x64, 0x18, 0x01,
+	0x20, 0x01, 0x28, 0x05, 0x52, 0x03, 0x43, 0x6d, 0x64, 0x12, 0x1c, 0x0a, 0x09, 0x53, 0x65, 0x73,
+	0x73, 0x69, 0x6f, 0x6e, 0x49, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x03, 0x52, 0x09, 0x53, 0x65,
+	0x73, 0x73, 0x69, 0x6f, 0x6e, 0x49, 0x64, 0x12, 0x12, 0x0a, 0x04, 0x44, 0x61, 0x74, 0x61, 0x18,
+	0x03, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x04, 0x44, 0x61, 0x74, 0x61, 0x22, 0x69, 0x0a, 0x09, 0x50,
+	0x72, 0x6f, 0x78, 0x79, 0x53, 0x79, 0x6e, 0x63, 0x12, 0x10, 0x0a, 0x03, 0x43, 0x6d, 0x64, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x05, 0x52, 0x03, 0x43, 0x6d, 0x64, 0x12, 0x1a, 0x0a, 0x08, 0x53, 0x72,
+	0x63, 0x50, 0x72, 0x6f, 0x78, 0x79, 0x18, 0x02, 0x20, 0x01, 0x28, 0x05, 0x52, 0x08, 0x53, 0x72,
+	0x63, 0x50, 0x72, 0x6f, 0x78, 0x79, 0x12, 0x1a, 0x0a, 0x08, 0x44, 0x73, 0x74, 0x50, 0x72, 0x6f,
+	0x78, 0x79, 0x18, 0x03, 0x20, 0x01, 0x28, 0x05, 0x52, 0x08, 0x44, 0x73, 0x74, 0x50, 0x72, 0x6f,
+	0x78, 0x79, 0x12, 0x12, 0x0a, 0x04, 0x44, 0x61, 0x74, 0x61, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0c,
+	0x52, 0x04, 0x44, 0x61, 0x74, 0x61, 0x22, 0x0c, 0x0a, 0x0a, 0x52, 0x50, 0x43, 0x4d, 0x65, 0x73,
+	0x73, 0x61, 0x67, 0x65, 0x22, 0x09, 0x0a, 0x07, 0x52, 0x50, 0x43, 0x44, 0x61, 0x74, 0x61, 0x42,
+	0x05, 0x5a, 0x03, 0x2f, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -108,9 +584,16 @@ func file_internal_proto_rawDescGZIP() []byte {
 	return file_internal_proto_rawDescData
 }
 
-var file_internal_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
+var file_internal_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_internal_proto_goTypes = []interface{}{
 	(*ProtoInternal)(nil), // 0: pb.ProtoInternal
+	(*GateToProxy)(nil),   // 1: pb.GateToProxy
+	(*ProxyToGate)(nil),   // 2: pb.ProxyToGate
+	(*ProxyToGame)(nil),   // 3: pb.ProxyToGame
+	(*GameToProxy)(nil),   // 4: pb.GameToProxy
+	(*ProxySync)(nil),     // 5: pb.ProxySync
+	(*RPCMessage)(nil),    // 6: pb.RPCMessage
+	(*RPCData)(nil),       // 7: pb.RPCData
 }
 var file_internal_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -138,6 +621,90 @@ func file_internal_proto_init() {
 				return nil
 			}
 		}
+		file_internal_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*GateToProxy); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_internal_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ProxyToGate); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_internal_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ProxyToGame); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_internal_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*GameToProxy); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_internal_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ProxySync); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_internal_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*RPCMessage); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_internal_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*RPCData); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -145,7 +712,7 @@ func file_internal_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_internal_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   1,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

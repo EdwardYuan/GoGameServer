@@ -76,6 +76,7 @@ func (s *ServiceGate) Start() (err error) {
 	go func(gg *ServiceGate) {
 		err = gnet.Serve(gg, lib.GNetAddr, gnet.WithMulticore(true),
 			gnet.WithCodec(codec.MsgCodec{}),
+			gnet.WithSocketRecvBuffer(lib.MaxReceiveBufCap),
 			//gnet.WithCodec(gnet.NewFixedLengthFrameCodec(5)),
 			//gnet.WithCodec(codec.CodecProtobuf{}),
 			gnet.WithLogger(lib.SugarLogger))
@@ -91,7 +92,7 @@ func (s *ServiceGate) React(frame []byte, c gnet.Conn) (out []byte, action gnet.
 	var err error
 	if s.workPool == nil {
 		s.workPool, err = ants.NewPool(global.DefaultPoolSize)
-		lib.LogIfError(err, "service gate new pool error")
+		lib.LogErrorAndReturn(err, "service gate new pool error")
 	}
 	if s.workPool != nil && err == nil {
 		s.wg.Add(1)
@@ -127,6 +128,7 @@ func (s *ServiceGate) React(frame []byte, c gnet.Conn) (out []byte, action gnet.
 					lib.SugarLogger.Info(msg.Name)
 					lib.SugarLogger.Info(msg.Email)
 				*/
+
 				msg := &pb.ProtoInternal{}
 				err = proto.Unmarshal(frame, msg)
 				lib.LogErrorAndReturn(err, "")

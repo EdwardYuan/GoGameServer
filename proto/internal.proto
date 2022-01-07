@@ -8,3 +8,47 @@ message ProtoInternal {
     uint64 SessionId = 2;
     bytes Data = 3; 
 }
+
+message GateToProxy {
+    int32 Cmd = 1;
+    uint64 SessionId = 2;
+    bool IsToAgent = 3;
+    int64 UserId = 4;
+    bytes Data = 5;
+}
+
+message ProxyToGate {
+    int32 Cmd = 1;
+    int64 SessionId = 2;
+    int64 UserId = 3;
+    bytes Data = 4;
+}
+
+message ProxyToGame {
+    int32 Cmd = 1;
+    int64 SessionId = 2;
+    bool IsToAgent = 3;
+    int64 UserId = 4;
+    bytes Data = 5;
+}
+
+message  GameToProxy {
+    int32 Cmd = 1;
+    int64 SessionId = 2;
+    bytes Data = 3;
+}
+
+message ProxySync {
+    int32 Cmd = 1;
+    int32 SrcProxy = 2;
+    int32 DstProxy = 3;
+    bytes Data = 4;
+}
+
+message RPCMessage {
+
+}
+
+message RPCData{
+
+}

@@ -10,7 +10,7 @@ import (
 //MsgCodec 实现gnet的Codec接口
 type MsgCodec struct {
 	Head   ServerMessageHead
-	Offset uint8
+	Offset uint32
 	Data   []byte
 }
 
@@ -23,39 +23,46 @@ func (mc MsgCodec) Encode(c gnet.Conn, buf []byte) ([]byte, error) {
 // 读取一个完整的消息包；处理组包问题
 func (mc MsgCodec) Decode(c gnet.Conn) ([]byte, error) {
 	var (
-		in  inBuffer
-		err error
+		in   inBuffer
+		err  error
+		size int
+		out  []byte
 	)
-
-	in = c.Read()
-	lib.SugarLogger.Debugf("read buffer length %d", MessageHeadLength)
-	buf, err := in.readN(MessageHeadLength)
-	if err != nil {
-		return nil, err
-	}
 	head := new(ServerMessageHead)
-	head.Decode(buf)
-	// TODO 校验包头
-	if ok, err := head.Check(); !ok {
-		lib.LogIfError(err, "decode message head error")
-		// 丢弃
+	if mc.Offset < MessageHeadLength {
+		size, in = c.ReadN(MessageHeadLength)
+		//in = c.Read()
+		mc.Offset = uint32(size)
+		lib.SugarLogger.Debugf("read buffer length %d", MessageHeadLength)
+		buf, err := in.readN(MessageHeadLength)
+		if err != nil {
+			return nil, err
+		}
+		head.Decode(buf)
+		// TODO 校验包头
+		if ok, err := head.Check(); !ok {
+			lib.LogIfError(err, "decode message head error")
+			// 丢弃
+		}
+		// 读取包头完成
+		c.ShiftN(MessageHeadLength)
+		lib.SugarLogger.Debugf("size is %d", head)
 	}
-	// 读取包头完成
-	c.ShiftN(MessageHeadLength)
-	lib.SugarLogger.Debugf("size is %d", head)
-	data, err := in.read(MessageHeadLength+1, MessageHeadLength+1+head.DataLength)
-	if lib.LogErrorAndReturn(err, "decode message error") {
-		return nil, err
+	if mc.Offset < uint32(MessageHeadLength+1+head.DataLength) {
+		data, err := in.read(MessageHeadLength+1, MessageHeadLength+1+head.DataLength)
+		if lib.LogErrorAndReturn(err, "decode message error") {
+			return nil, err
+		}
+		outMsg := &pb.ProtoInternal{
+			Cmd:       int32(head.Cmd),
+			SessionId: 0,
+			Data:      data,
+		}
+		//in = append(in, data...)
+		out, err = proto.Marshal(outMsg)
+		// TODO 校验包体
+		// 返回的是一个完整的消息体
+		c.ShiftN(MessageHeadLength + head.DataLength)
 	}
-	outMsg := &pb.ProtoInternal{
-		Cmd:       int32(head.Cmd),
-		SessionId: 0,
-		Data:      data,
-	}
-	//in = append(in, data...)
-	out, err := proto.Marshal(outMsg)
-	// TODO 校验包体
-	// 返回的是一个完整的消息体
-	c.ShiftN(MessageHeadLength + head.DataLength)
 	return out, err
 }
