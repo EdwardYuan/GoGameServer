@@ -4,7 +4,9 @@ import (
 	"GoGameServer/src/codec"
 	"GoGameServer/src/config"
 	"GoGameServer/src/lib"
+	"GoGameServer/src/pb"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/panjf2000/ants/v2"
@@ -12,6 +14,7 @@ import (
 	client "go.etcd.io/etcd/client/v3"
 	"google.golang.org/protobuf/proto"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -23,6 +26,7 @@ type ServiceProxy struct {
 	Agent     *EtcdAgent
 	workPool  *ants.Pool
 	gnet.EventHandler
+	GameConnections map[string]gnet.Conn
 }
 
 type EtcdAgent struct {
@@ -51,12 +55,66 @@ func NewServiceProxy(_name string, id int) *ServiceProxy {
 	pool, err := ants.NewPool(ants.DefaultAntsPoolSize)
 	lib.FatalOnError(err, "Create Proxy Service error")
 	return &ServiceProxy{
-		ProcessId: 0, // 自己的ProcessId为0
-		info:      NewServerInfo(int32(id), lib.GetLocalIP(lib.IPv4), _name, 0),
-		Servers:   make(map[string]*Serverinfo, 1),
-		Agent:     NewEtcdAgent(),
-		workPool:  pool,
+		ProcessId:       0, // 自己的ProcessId为0
+		info:            NewServerInfo(int32(id), lib.GetLocalIP(lib.IPv4), _name, 0),
+		Servers:         make(map[string]*Serverinfo, 1),
+		Agent:           NewEtcdAgent(),
+		workPool:        pool,
+		GameConnections: make(map[string]gnet.Conn, lib.MaxGameServerCount),
 	}
+}
+
+func (s *ServiceProxy) OnOpened(c gnet.Conn) (out []byte, action gnet.Action) {
+	if s.GameConnections != nil {
+		addr := c.RemoteAddr()
+		serverInfo := s.Servers[addr.String()]
+		s.GameConnections[serverInfo.Name] = c
+	}
+	return
+}
+
+func (s *ServiceProxy) SendToGame(name string, sessionId uint64, data []byte) {
+	if conn, ok := s.GameConnections[name]; ok {
+		if err := conn.AsyncWrite(data); err != nil { // 异步写会不会有问题，如果客户端发来的消息依赖顺序
+			lib.LogErrorAndReturn(err, "ServiceProxy SendToGame Error")
+		}
+	}
+}
+
+func (c *EtcdAgent) GetServerInfo(name string) *Serverinfo {
+	resp, err := c.Client.Get(context.TODO(), "services/"+name)
+	var serverStr string
+
+	lib.LogErrorAndReturn(err, "Etcd Agent GetServerInfo")
+	for _, v := range resp.Kvs {
+		json.Unmarshal(v.Value, &serverStr)
+	}
+	ServerInfo := makeServerInfo(serverStr)
+	return ServerInfo
+}
+
+func makeServerInfo(value string) *Serverinfo {
+	var err error
+	infos := strings.Split(value, ",")
+	id, err1 := strconv.Atoi(infos[0])
+	port, err2 := strconv.Atoi(infos[3])
+	if err1 != nil {
+		err = err1
+	}
+	if err2 != nil {
+		err = err2
+	}
+	lib.LogErrorAndReturn(err, "makeServerInfo")
+	return &Serverinfo{
+		Id:   int32(id),
+		Name: infos[1],
+		IP:   infos[2],
+		Port: int32(port),
+	}
+}
+
+func buildServerInfoString(s *Serverinfo) string {
+	return strconv.Itoa(int(s.Id)) + "," + s.Name + "," + s.IP + strconv.Itoa(int(s.Port))
 }
 
 func (c *EtcdAgent) run(s *Serverinfo) {
@@ -64,7 +122,7 @@ func (c *EtcdAgent) run(s *Serverinfo) {
 		select {
 		case <-c.RegisteredSvr:
 			go func() {
-				_, err := c.Client.Put(context.TODO(), "services/"+strconv.Itoa(int(s.Id)), s.IP+":"+strconv.Itoa(int(s.Port)))
+				_, err := c.Client.Put(context.TODO(), "services/"+s.Name, buildServerInfoString(s))
 				lib.LogIfError(err, "Register server error")
 			}()
 		case serverId := <-c.QueryChan:
@@ -88,7 +146,7 @@ func (c *EtcdAgent) run(s *Serverinfo) {
 func (p *ServiceProxy) Start() (err error) {
 	p.Agent.Proxy = p
 	p.AddrServer(&p.info) // 首先添加自身服务到etcd
-	if gnet.Serve(p, config.ProxyAddr, gnet.WithCodec(codec.MsgCodec{}),
+	if gnet.Serve(p, config.ProxyAddr, gnet.WithCodec(codec.CodecProtobuf{}),
 		gnet.WithMulticore(true)) != nil {
 		lib.FatalOnError(err, "Proxy Serve error")
 	}
@@ -99,10 +157,24 @@ func (p *ServiceProxy) Start() (err error) {
 func (p *ServiceProxy) React(frame []byte, c gnet.Conn) (out []byte, action gnet.Action) {
 	go p.workPool.Submit(
 		func() {
-			var message proto.Message
-			err := proto.Unmarshal(frame, message)
-			lib.LogErrorAndReturn(err, "Service proxy handle Packet")
-			lib.SugarLogger.Info(message)
+			var message *pb.ProtoInternal
+			proto.Unmarshal(frame, message)
+			switch message.Cmd {
+			case pb.InternalGateToProxy:
+				dst := message.Dst
+				if service, ok := p.Servers[dst]; ok {
+					if strings.Contains(service.Name, "game") {
+						postMsg := &pb.ProxyToGame{
+							Cmd:       pb.InternalProxyToGame,
+							SessionId: message.SessionId,
+							IsToAgent: false,
+							UserId:    0,
+							Data:      frame,
+						}
+						p.SendToGame(dst, postMsg.SessionId, postMsg.Data)
+					}
+				}
+			}
 		})
 	return
 }
@@ -112,7 +184,10 @@ func (p *ServiceProxy) Stop() {
 }
 
 func (p *ServiceProxy) Run() {
-	p.Agent.run(&p.info)
+	go p.Agent.run(&p.info)
+	for {
+		select {}
+	}
 }
 
 func (p *ServiceProxy) LoadConfig(path string) error {

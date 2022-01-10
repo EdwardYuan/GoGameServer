@@ -132,9 +132,11 @@ func (s *ServiceGate) React(frame []byte, c gnet.Conn) (out []byte, action gnet.
 				msg := &pb.ProtoInternal{}
 				err = proto.Unmarshal(frame, msg)
 				lib.LogErrorAndReturn(err, "")
-				switch msg.Cmd {
-				case pb.InternalGateToProxy:
-					s.SendToProxy(frame)
+				if msg.Dst != s.Name {
+					switch msg.Cmd {
+					case pb.InternalGateToProxy:
+						s.SendToProxy(frame)
+					}
 				}
 				//s.SendToProxy(msg)
 			})
