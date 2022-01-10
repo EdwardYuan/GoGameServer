@@ -27,6 +27,7 @@ type ServiceProxy struct {
 	workPool  *ants.Pool
 	gnet.EventHandler
 	GameConnections map[string]gnet.Conn
+	MsgChan         chan pb.ProtoInternal
 }
 
 type EtcdAgent struct {
@@ -60,6 +61,7 @@ func NewServiceProxy(_name string, id int) *ServiceProxy {
 		Servers:         make(map[string]*Serverinfo, 1),
 		Agent:           NewEtcdAgent(),
 		workPool:        pool,
+		MsgChan:         make(chan pb.ProtoInternal, lib.MaxMessageCount),
 		GameConnections: make(map[string]gnet.Conn, lib.MaxGameServerCount),
 	}
 }
@@ -146,10 +148,15 @@ func (c *EtcdAgent) run(s *Serverinfo) {
 func (p *ServiceProxy) Start() (err error) {
 	p.Agent.Proxy = p
 	p.AddrServer(&p.info) // 首先添加自身服务到etcd
-	if gnet.Serve(p, config.ProxyAddr, gnet.WithCodec(codec.CodecProtobuf{}),
-		gnet.WithMulticore(true)) != nil {
-		lib.FatalOnError(err, "Proxy Serve error")
-	}
+	go func() {
+		if gnet.Serve(p, config.ProxyAddr, gnet.WithCodec(codec.CodecProtobuf{}),
+			gnet.WithMulticore(true)) != nil {
+			lib.FatalOnError(err, "Proxy Serve error")
+		}
+	}()
+	defer func() {
+		p.workPool.Release()
+	}()
 	p.Run()
 	return
 }
@@ -164,14 +171,14 @@ func (p *ServiceProxy) React(frame []byte, c gnet.Conn) (out []byte, action gnet
 				dst := message.Dst
 				if service, ok := p.Servers[dst]; ok {
 					if strings.Contains(service.Name, "game") {
-						postMsg := &pb.ProxyToGame{
+						postMsg := pb.ProtoInternal{
 							Cmd:       pb.InternalProxyToGame,
+							Dst:       dst,
 							SessionId: message.SessionId,
-							IsToAgent: false,
-							UserId:    0,
 							Data:      frame,
 						}
-						p.SendToGame(dst, postMsg.SessionId, postMsg.Data)
+						p.MsgChan <- postMsg
+						//p.SendToGame(dst, postMsg.SessionId, postMsg.Data)
 					}
 				}
 			}
@@ -186,7 +193,10 @@ func (p *ServiceProxy) Stop() {
 func (p *ServiceProxy) Run() {
 	go p.Agent.run(&p.info)
 	for {
-		select {}
+		select {
+		case msg := <-p.MsgChan:
+			p.SendToGame(msg.Dst, msg.SessionId, msg.Data)
+		}
 	}
 }
 
