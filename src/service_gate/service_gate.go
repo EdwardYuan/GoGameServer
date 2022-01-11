@@ -9,6 +9,7 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
 	"net"
+	"strings"
 	"sync"
 
 	"github.com/panjf2000/ants/v2"
@@ -25,6 +26,7 @@ type ServiceGate struct {
 	proxyConn net.Conn
 	runChan   chan bool
 	h         MessageHandler
+	msgChan   chan pb.ProtoInternal
 	*gnet.EventServer
 }
 
@@ -38,6 +40,7 @@ func NewServiceGate(_name string, id int) *ServiceGate {
 			Name: _name,
 			Id:   id,
 		},
+		msgChan:     make(chan pb.ProtoInternal, lib.MaxMessageCount),
 		EventServer: new(gnet.EventServer),
 	}
 }
@@ -135,10 +138,13 @@ func (s *ServiceGate) React(frame []byte, c gnet.Conn) (out []byte, action gnet.
 				if msg.Dst != s.Name {
 					switch msg.Cmd {
 					case pb.InternalGateToProxy:
-						s.SendToProxy(frame)
+						if strings.Contains(msg.Dst, "proxy") {
+							s.SendToProxy(frame)
+						}
+					case pb.InternalProxyToGate:
+						s.msgChan <- *msg
 					}
 				}
-				//s.SendToProxy(msg)
 			})
 			if err != nil {
 				lib.Log(zap.ErrorLevel, "submit message pool error", err)
@@ -160,6 +166,8 @@ func (s *ServiceGate) Stop() {
 func (s *ServiceGate) Run() {
 	for {
 		select {
+		case msg := <-s.msgChan:
+			s.handleMessage(msg)
 		case <-s.runChan:
 			lib.SugarLogger.Info("running")
 		case <-s.CloseChan:
@@ -167,6 +175,10 @@ func (s *ServiceGate) Run() {
 			close(s.CloseChan)
 		}
 	}
+}
+
+func (s *ServiceGate) handleMessage(msg pb.ProtoInternal) {
+
 }
 
 func (s *ServiceGate) SendToProxy(data []byte) {

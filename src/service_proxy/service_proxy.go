@@ -178,7 +178,6 @@ func (p *ServiceProxy) React(frame []byte, c gnet.Conn) (out []byte, action gnet
 							Data:      frame,
 						}
 						p.MsgChan <- postMsg
-						//p.SendToGame(dst, postMsg.SessionId, postMsg.Data)
 					}
 				}
 			}
@@ -207,7 +206,7 @@ func (p *ServiceProxy) LoadConfig(path string) error {
 func (p *ServiceProxy) AddrServer(s *Serverinfo) {
 	// 如果proxy服务的etcd client不存在，直接退出
 	if p.Agent == nil {
-		err := errors.New("no etcd agent exist.")
+		err := errors.New("no etcd agent exist")
 		lib.FatalOnError(err, "Register new service")
 	}
 	key := strconv.Itoa(int(s.Id)) + s.Name
@@ -217,7 +216,7 @@ func (p *ServiceProxy) AddrServer(s *Serverinfo) {
 }
 
 func (s *ServiceProxy) HeartBeat() {
-	key := "services/" + strconv.Itoa(s.ProcessId)
+	key := "services/" + s.info.Name
 	if s.Agent != nil && s.Agent.Client != nil {
 		_, err := s.Agent.Client.Get(context.Background(), key, nil)
 		lib.FatalOnError(err, "Proxy Service"+strconv.Itoa(s.ProcessId)+" error: ")

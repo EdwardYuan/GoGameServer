@@ -1,12 +1,14 @@
 package service_game
 
 import (
+	"GoGameServer/src/codec"
 	"GoGameServer/src/game"
 	"GoGameServer/src/global"
 	"GoGameServer/src/lib"
 	"GoGameServer/src/pb"
 	"GoGameServer/src/protocol"
 	"GoGameServer/src/service_common"
+	"errors"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
@@ -23,8 +25,12 @@ type GameServer struct {
 	dbConn       net.Conn
 	proxyConn    net.Conn
 	recvChan     chan protocol.Message
-	clients      map[uint64]*Client
+	clients      map[uint64]*Client // gate发过来的SessionId到角色的映射
 	AgentManager *game.AgentManager
+
+	//下面这部分分离到网络处理中
+	readBuffer []byte
+	readOffset int
 }
 
 func NewGameServer(_name string, id int) *GameServer {
@@ -36,6 +42,7 @@ func NewGameServer(_name string, id int) *GameServer {
 		},
 		wg:           sync.WaitGroup{},
 		runChannel:   make(chan bool),
+		clients:      make(map[uint64]*Client, lib.MaxOnlineClientCount),
 		AgentManager: game.NewAgentManager(),
 	}
 }
@@ -67,7 +74,8 @@ func (gs *GameServer) Start() (err error) {
 	lib.FatalOnError(err, "Connect to DBServer")
 	// 连接Proxy
 	err = gs.connectToProxy()
-	gs.Run()
+	go gs.netLoop()
+	go gs.Run()
 	return
 }
 
@@ -106,6 +114,18 @@ func (gs *GameServer) connectToDBServer() (err error) {
 }
 
 func (gs *GameServer) netLoop() {
+	for {
+		size, err := gs.proxyConn.Read(gs.readBuffer[gs.readOffset:codec.MessageHeadLength])
+		lib.LogIfError(err, "GameServer read buffer error")
+		if size != codec.MessageHeadLength {
+			lib.LogIfError(errors.New("invalid read size"), " GameServer read buffer error")
+		}
+		head := new(codec.ServerMessageHead)
+		head.Decode(gs.readBuffer[:codec.MessageHeadLength])
+		if ok, err := head.Check(); err != nil || !ok {
+			lib.LogIfError(err, "")
+		}
+	}
 
 }
 

@@ -1,6 +1,7 @@
 package game
 
 import (
+	"GoGameServer/network"
 	"GoGameServer/src/lib"
 	"time"
 )
@@ -75,7 +76,7 @@ func (am *AgentManager) GetPlayer(playerId int64) *Player {
 	return nil
 }
 
-func (am *AgentManager) NewAgent(s *lib.Session, playerId int64) *Agent {
+func (am *AgentManager) NewAgent(s *network.Session, playerId int64) *Agent {
 	agent := Agent{}
 	am.Agents[playerId] = &agent
 	return &agent

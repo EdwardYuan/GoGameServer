@@ -1,6 +1,7 @@
 package service_game
 
 import (
+	"GoGameServer/network"
 	"GoGameServer/src/codec"
 	"GoGameServer/src/game"
 	"GoGameServer/src/lib"
@@ -33,7 +34,7 @@ type Client struct {
 	closed          bool
 }
 
-func (gs *GameServer) NewClient(session *lib.Session, playerId int64) *Client {
+func (gs *GameServer) NewClient(session *network.Session, playerId int64) *Client {
 	client := new(Client)
 	agent := gs.AgentManager.NewAgent(session, playerId)
 	client.agent = agent

@@ -5,6 +5,7 @@ import (
 	"net"
 	"os"
 	"reflect"
+	"sync/atomic"
 	"unsafe"
 )
 
@@ -14,6 +15,23 @@ const (
 	IPv4 IPVersion = iota
 	IPv6
 )
+
+//原子Bool
+type AtomBool struct {
+	flag int32
+}
+
+func (this *AtomBool) Set(value bool) {
+	var flag int32 = 0
+	if value {
+		flag = 1
+	}
+	atomic.StoreInt32(&(this.flag), flag)
+}
+
+func (this *AtomBool) Get() bool {
+	return atomic.LoadInt32(&(this.flag)) == 1
+}
 
 func SizeStruct(data interface{}) int {
 	return sizeof(reflect.ValueOf(data))
@@ -90,6 +108,7 @@ func sizeof(v reflect.Value) int {
 
 	return -1
 }
+
 func GetLocalIP(ver IPVersion) string {
 	host, _ := os.Hostname()
 	addrs, _ := net.LookupIP(host)

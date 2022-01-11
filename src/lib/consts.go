@@ -7,4 +7,6 @@ const (
 	MaxGameServerCount = 255 // 一个代理上连接的游戏服上限
 
 	MaxMessageCount = 1024 // 同时处理的消息上限
+
+	MaxOnlineClientCount = 30000 // 单服最大同时在线角色数量
 )
