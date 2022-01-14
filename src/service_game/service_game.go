@@ -115,6 +115,7 @@ func (gs *GameServer) connectToDBServer() (err error) {
 
 func (gs *GameServer) netLoop() {
 	for {
+
 		size, err := gs.proxyConn.Read(gs.readBuffer[gs.readOffset:codec.MessageHeadLength])
 		lib.LogIfError(err, "GameServer read buffer error")
 		if size != codec.MessageHeadLength {
