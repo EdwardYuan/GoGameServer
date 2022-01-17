@@ -6,14 +6,29 @@ import (
 	"GoGameServer/src/pb"
 	"errors"
 	"go.uber.org/zap"
-	"google.golang.org/protobuf/proto"
 )
 
 type Processor struct {
-	session    *Session
-	readBuffer []byte
-	readOffset int
-	network    *Network
+	session        *Session
+	reader         MessageReader
+	writer         MessageWriter
+	writeChan      chan *pb.ProtoInternal
+	readCloseChan  chan int
+	writeCloseChan chan int
+	logger         *zap.SugaredLogger
+}
+
+func NewProcessor(s *Session) *Processor {
+	p := &Processor{
+		reader:         NewLineBasedMessageReader(s.logger),
+		writer:         NewLineBasedMessageWriter(s.logger),
+		writeChan:      make(chan *pb.ProtoInternal, lib.MaxMessageCount),
+		readCloseChan:  make(chan int),
+		writeCloseChan: make(chan int),
+		logger:         s.logger,
+	}
+	p.session = s
+	return p
 }
 
 type MessageReader interface {
@@ -41,6 +56,8 @@ func NewLineBasedMessageReader(logger *zap.SugaredLogger) *LineBasedMessageReade
 
 func (lr *LineBasedMessageReader) ReadMessage(session *Session) (*pb.ProtoInternal, error) {
 	size, err := session.conn.Read(lr.readBuffer[lr.readOffset:codec.MessageHeadLength])
+	return codec.DecodeData(lr.readBuffer)
+	//------------------------------------------------
 	lib.LogErrorAndReturn(err, "")
 	lr.readOffset = uint32(size)
 	head := new(codec.ServerMessageHead)
@@ -76,12 +93,18 @@ func NewLineBasedMessageWriter(logger *zap.SugaredLogger) *LineBasedMessageWrite
 }
 
 func (lw *LineBasedMessageWriter) WriteMessage(session *Session, message *pb.ProtoInternal) error {
-	var buf []byte
-	lw.head.Encode(buf)
-	lw.writeBuffer = append(lw.writeBuffer, buf...)
-	data, err := proto.Marshal(message)
-	lib.LogErrorAndReturn(err, "")
-	lw.writeBuffer = append(lw.writeBuffer, data...)
 
+	buf, err := codec.EncodeMessage(message)
+	copy(lw.writeBuffer, buf)
 	return err
+	/*
+		var buf []byte
+		lw.head.Encode(buf)
+		lw.writeBuffer = append(lw.writeBuffer, buf...)
+		data, err := proto.Marshal(message)
+		lib.LogErrorAndReturn(err, "")
+		lw.writeBuffer = append(lw.writeBuffer, data...)
+
+		return err
+	*/
 }
