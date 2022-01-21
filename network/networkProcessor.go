@@ -57,6 +57,7 @@ func NewLineBasedMessageReader(logger *zap.SugaredLogger) *LineBasedMessageReade
 func (lr *LineBasedMessageReader) ReadMessage(session *Session) (*pb.ProtoInternal, error) {
 	size, err := session.conn.Read(lr.readBuffer[lr.readOffset:codec.MessageHeadLength])
 	return codec.DecodeData(lr.readBuffer)
+
 	//------------------------------------------------
 	lib.LogErrorAndReturn(err, "")
 	lr.readOffset = uint32(size)

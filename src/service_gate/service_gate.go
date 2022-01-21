@@ -97,6 +97,7 @@ func (s *ServiceGate) React(frame []byte, c gnet.Conn) (out []byte, action gnet.
 		s.workPool, err = ants.NewPool(global.DefaultPoolSize)
 		lib.LogErrorAndReturn(err, "service gate new pool error")
 	}
+
 	if s.workPool != nil && err == nil {
 		s.wg.Add(1)
 		go func() {
