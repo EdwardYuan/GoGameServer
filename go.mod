@@ -3,15 +3,14 @@ module GoGameServer
 go 1.17
 
 require (
-	github.com/gogo/protobuf v1.3.2
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/panjf2000/ants/v2 v2.4.7
-	github.com/panjf2000/gnet v1.6.3
+	github.com/panjf2000/gnet v1.6.4
 	github.com/spf13/cobra v1.3.0
 	github.com/spf13/viper v1.10.1
 	github.com/streadway/amqp v1.0.0
 	go.etcd.io/etcd/client/v3 v3.5.1
-	go.uber.org/zap v1.19.1
+	go.uber.org/zap v1.20.0
 	google.golang.org/protobuf v1.27.1
 )
 
@@ -19,6 +18,7 @@ require (
 	github.com/coreos/go-semver v0.3.0 // indirect
 	github.com/coreos/go-systemd/v22 v22.3.2 // indirect
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
+	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
