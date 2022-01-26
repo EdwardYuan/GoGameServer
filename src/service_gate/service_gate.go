@@ -140,6 +140,9 @@ func (s *ServiceGate) React(frame []byte, c gnet.Conn) (out []byte, action gnet.
 				if msg.Dst != s.Name {
 					switch msg.Cmd {
 					case pb.InternalGateToProxy:
+						if msg.Dst == "" {
+							msg.Dst = "proxy"
+						}
 						if strings.Contains(msg.Dst, "proxy") {
 							s.SendToProxy(frame)
 						}

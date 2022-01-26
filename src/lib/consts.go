@@ -9,4 +9,6 @@ const (
 	MaxMessageCount = 1024 // 同时处理的消息上限
 
 	MaxOnlineClientCount = 30000 // 单服最大同时在线角色数量
+
+	MaxTotalAgents = 500000
 )

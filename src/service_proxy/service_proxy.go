@@ -27,6 +27,7 @@ type ServiceProxy struct {
 	workPool  *ants.Pool
 	gnet.EventHandler
 	GameConnections map[string]gnet.Conn
+	AgentsToGames   map[uint64]string
 	MsgChan         chan pb.ProtoInternal
 }
 
@@ -63,6 +64,7 @@ func NewServiceProxy(_name string, id int) *ServiceProxy {
 		workPool:        pool,
 		MsgChan:         make(chan pb.ProtoInternal, lib.MaxMessageCount),
 		GameConnections: make(map[string]gnet.Conn, lib.MaxGameServerCount),
+		AgentsToGames:   make(map[uint64]string, lib.MaxTotalAgents),
 	}
 }
 
@@ -165,9 +167,18 @@ func (p *ServiceProxy) React(frame []byte, c gnet.Conn) (out []byte, action gnet
 	go p.workPool.Submit(
 		func() {
 			var message *pb.ProtoInternal
-			proto.Unmarshal(frame, message)
+			if lib.LogErrorAndReturn(proto.Unmarshal(frame, message), "unmarshal message error") {
+				return
+			}
 			switch message.Cmd {
 			case pb.InternalGateToProxy:
+				//  登录游戏 第一次 创建连接 加入map
+				if p.findGameServerBySession(message.SessionId) == "" {
+					err := p.RegisterSessionToGame(message.SessionId, message.Dst)
+					if lib.LogErrorAndReturn(err, "register session to game") {
+						return
+					}
+				}
 				dst := message.Dst
 				if service, ok := p.Servers[dst]; ok {
 					if strings.Contains(service.Name, "game") {
@@ -183,6 +194,17 @@ func (p *ServiceProxy) React(frame []byte, c gnet.Conn) (out []byte, action gnet
 			}
 		})
 	return
+}
+
+func (p *ServiceProxy) findGameServerBySession(sessionId uint64) (gameName string) {
+	return p.AgentsToGames[sessionId]
+}
+
+func (p *ServiceProxy) RegisterSessionToGame(session uint64, name string) error {
+	if p.AgentsToGames[session] != "" {
+		return errors.New("already exists")
+	}
+	p.AgentsToGames[session] = name
 }
 
 func (p *ServiceProxy) Stop() {
