@@ -28,7 +28,7 @@ type ServiceProxy struct {
 	gnet.EventHandler
 	GameConnections map[string]gnet.Conn
 	AgentsToGames   map[uint64]string
-	MsgChan         chan pb.ProtoInternal
+	MsgChan         chan *pb.ProtoInternal
 }
 
 type EtcdAgent struct {
@@ -62,7 +62,7 @@ func NewServiceProxy(_name string, id int) *ServiceProxy {
 		Servers:         make(map[string]*ServerInfo, 1),
 		Agent:           NewEtcdAgent(),
 		workPool:        pool,
-		MsgChan:         make(chan pb.ProtoInternal, lib.MaxMessageCount),
+		MsgChan:         make(chan *pb.ProtoInternal, lib.MaxMessageCount),
 		GameConnections: make(map[string]gnet.Conn, lib.MaxGameServerCount),
 		AgentsToGames:   make(map[uint64]string, lib.MaxTotalAgents),
 	}
@@ -91,7 +91,9 @@ func (c *EtcdAgent) GetServerInfo(name string) *ServerInfo {
 
 	lib.LogErrorAndReturn(err, "Etcd Agent GetServerInfo")
 	for _, v := range resp.Kvs {
-		json.Unmarshal(v.Value, &serverStr)
+		if lib.LogErrorAndReturn(json.Unmarshal(v.Value, &serverStr), "unmarshal message error") {
+			continue
+		}
 	}
 	ServerInfo := makeServerInfo(serverStr)
 	return ServerInfo
@@ -142,7 +144,9 @@ func (c *EtcdAgent) run(s *ServerInfo) {
 		case <-c.ticker.C:
 			go c.Proxy.HeartBeat()
 		case <-c.CloseChan:
-			c.Client.Close()
+			if lib.LogErrorAndReturn(c.Client.Close(), "close client") {
+				return
+			}
 		}
 	}
 }
@@ -188,7 +192,7 @@ func (p *ServiceProxy) React(frame []byte, c gnet.Conn) (out []byte, action gnet
 							SessionId: message.SessionId,
 							Data:      frame,
 						}
-						p.MsgChan <- postMsg
+						p.MsgChan <- &postMsg
 					}
 				}
 			}
