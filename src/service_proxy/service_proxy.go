@@ -205,6 +205,7 @@ func (p *ServiceProxy) RegisterSessionToGame(session uint64, name string) error 
 		return errors.New("already exists")
 	}
 	p.AgentsToGames[session] = name
+	return nil
 }
 
 func (p *ServiceProxy) Stop() {
