@@ -47,22 +47,3 @@ func (s *ServerCommon) Start() {
 	lib.FatalOnError(s.LoadConfig("./config"), "Load Config Error")
 	s.SvrTick = time.NewTicker(time.Duration(time.Millisecond))
 }
-
-//func (s *ServerCommon) Encode(msg lib.Message) (data []byte, err error) {
-//	return
-//}
-//
-//func (s *ServerCommon) Decode(data []byte) (msg lib.Message, err error) {
-//	head := lib.NewMessageHead()
-//	head.Decode(data)
-//	err = head.Check()
-//
-//	lib.Log(zap.ErrorLevel, "Decode Message Data Error: ", err)
-//	return
-//}
-//
-//func (s *ServerCommon) HandleMessage(msg lib.Message) {
-//	go func() {
-//
-//	}()
-//}

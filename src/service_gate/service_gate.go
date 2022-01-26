@@ -135,6 +135,7 @@ func (s *ServiceGate) React(frame []byte, c gnet.Conn) (out []byte, action gnet.
 
 				msg := &pb.ProtoInternal{}
 				err = proto.Unmarshal(frame, msg)
+				lib.SugarLogger.Debugf("msg is %+v", msg)
 				lib.LogErrorAndReturn(err, "")
 				if msg.Dst != s.Name {
 					switch msg.Cmd {

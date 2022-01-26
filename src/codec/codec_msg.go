@@ -15,11 +15,11 @@ type MsgCodec struct {
 	Data   []byte
 }
 
-func (mc *MsgCodec) EncodeMessage(msg *pb.ProtoInternal) (out []byte, err error) {
+func EncodeMessage(msg *pb.ProtoInternal) (out []byte, err error) {
 	return
 }
 
-func (mc *MsgCodec) DecodeData(buf []byte) (msg *pb.ProtoInternal, err error) {
+func DecodeData(buf []byte) (msg *pb.ProtoInternal, err error) {
 	var (
 		in      inBuffer
 		readBuf inBuffer
@@ -29,7 +29,6 @@ func (mc *MsgCodec) DecodeData(buf []byte) (msg *pb.ProtoInternal, err error) {
 	//todo check offset
 	readBuf, err = in.readN(MessageHeadLength)
 	head.Decode(readBuf)
-	mc.Head = *head
 	if ok, err := head.Check(); !ok || err != nil {
 		if lib.LogErrorAndReturn(err, "Decode head error") {
 			return nil, err
@@ -43,8 +42,8 @@ func (mc *MsgCodec) DecodeData(buf []byte) (msg *pb.ProtoInternal, err error) {
 		SessionId: 0,
 		Data:      body,
 	}
-	mc.Msg = outMsg
 	msg = outMsg
+
 	return
 }
 
@@ -55,7 +54,7 @@ func (mc MsgCodec) Encode(c gnet.Conn, buf []byte) ([]byte, error) {
 	if lib.LogErrorAndReturn(err, "") {
 		return nil, err
 	}
-	return mc.EncodeMessage(msg)
+	return EncodeMessage(msg)
 }
 
 // Decode decodes frames from TCP stream via specific implementation.
@@ -63,9 +62,10 @@ func (mc MsgCodec) Encode(c gnet.Conn, buf []byte) ([]byte, error) {
 func (mc MsgCodec) Decode(c gnet.Conn) ([]byte, error) {
 
 	buf := c.Read()
-	msg, err := mc.DecodeData(buf)
+	msg, err := DecodeData(buf)
 	lib.LogErrorAndReturn(err, "")
-	return msg.Data, err
+	c.ResetBuffer()
+	return proto.Marshal(msg)
 	/*
 		var (
 			in   inBuffer
