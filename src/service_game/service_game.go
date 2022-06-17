@@ -28,6 +28,7 @@ type GameServer struct {
 	clients      map[uint64]*Client // gate发过来的SessionId到角色的映射
 	AgentManager *game.AgentManager
 
+	// 这是一行注释
 	//下面这部分分离到网络处理中
 	readBuffer []byte
 	readOffset int
