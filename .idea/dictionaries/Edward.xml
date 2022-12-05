@@ -3,6 +3,7 @@
     <words>
       <w>dbserver</w>
       <w>etcd</w>
+      <w>gmevt</w>
       <w>gnet</w>
       <w>playerid</w>
       <w>rabbitmq</w>

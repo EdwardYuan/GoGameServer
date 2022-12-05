@@ -21,12 +21,12 @@ type ServiceGate struct {
 	workPool *ants.Pool
 	wg       sync.WaitGroup
 	*service_common.ServerCommon
-	gsConn    net.Conn
-	proxyLi   net.Listener
+	gsConn net.Conn
+	//proxyLi   net.Listener
 	proxyConn net.Conn
 	runChan   chan bool
 	h         MessageHandler
-	msgChan   chan pb.ProtoInternal
+	msgChan   chan *pb.ProtoInternal
 	*gnet.EventServer
 }
 
@@ -40,7 +40,7 @@ func NewServiceGate(_name string, id int) *ServiceGate {
 			Name: _name,
 			Id:   id,
 		},
-		msgChan:     make(chan pb.ProtoInternal, lib.MaxMessageCount),
+		msgChan:     make(chan *pb.ProtoInternal, lib.MaxMessageCount),
 		EventServer: new(gnet.EventServer),
 	}
 }
@@ -65,12 +65,20 @@ func (s *ServiceGate) Error() string {
 func (s *ServiceGate) Start() (err error) {
 	lib.SugarLogger.Info("Service Gate Start: ", s.Name)
 	s.ServerCommon.Start()
+
 	go func() {
-		s.proxyLi, err = net.Listen("tcp", "127.0.0.1:9001")
-		lib.LogErrorAndReturn(err, "Service Gate listen ")
-		s.proxyConn, err = s.proxyLi.Accept()
-		lib.LogIfError(err, "Accept Proxy error")
+		s.proxyConn, err = net.Dial("tcp", "127.0.0.1:9100")
+		if lib.LogErrorAndReturn(err, "connect to proxy") {
+			return
+		}
 	}()
+
+	//go func() {
+	//	s.proxyLi, err = net.Listen("tcp", "127.0.0.1:9001")
+	//	lib.LogErrorAndReturn(err, "Service Gate listen ")
+	//	s.proxyConn, err = s.proxyLi.Accept()
+	//	lib.LogIfError(err, "Accept Proxy error")
+	//}()
 	defer func() {
 		s.workPool.Release()
 		s.gsConn.Close()
@@ -119,25 +127,13 @@ func (s *ServiceGate) React(frame []byte, c gnet.Conn) (out []byte, action gnet.
 				//default:
 				//	return
 				//}
-
-				/*
-					//var message proto.Message
-					msg := &pb.Person1{}
-					err := proto.Unmarshal(frame, msg)
-					lib.LogIfError(err, "unmarshal message error")
-					if !s.h.Check(msg) {
-						return
-					}
-					lib.SugarLogger.Info(msg.Id)
-					lib.SugarLogger.Info(msg.Name)
-					lib.SugarLogger.Info(msg.Email)
-				*/
-
 				msg := &pb.ProtoInternal{}
 				err = proto.Unmarshal(frame, msg)
 				lib.SugarLogger.Debugf("msg is %+v", msg)
-				lib.LogErrorAndReturn(err, "")
-				if msg.Dst != s.Name {
+				if lib.LogErrorAndReturn(err, "") {
+					return
+				}
+				if msg.Dst != s.Name { // 转发
 					switch msg.Cmd {
 					case pb.InternalGateToProxy:
 						if msg.Dst == "" {
@@ -147,7 +143,7 @@ func (s *ServiceGate) React(frame []byte, c gnet.Conn) (out []byte, action gnet.
 							s.SendToProxy(frame)
 						}
 					case pb.InternalProxyToGate:
-						s.msgChan <- *msg
+						s.msgChan <- msg
 					}
 				}
 			})
@@ -182,17 +178,19 @@ func (s *ServiceGate) Run() {
 	}
 }
 
-func (s *ServiceGate) handleMessage(msg pb.ProtoInternal) {
+func (s *ServiceGate) handleMessage(msg *pb.ProtoInternal) {
 
 }
 
 func (s *ServiceGate) SendToProxy(data []byte) {
 	if s.proxyConn != nil {
-		s.proxyConn.Write(data)
+		_, err := s.proxyConn.Write(data)
+		if lib.LogErrorAndReturn(err, "") {
+			return
+		}
 	}
 }
 
 func (s *ServiceGate) LoadConfig(path string) error {
-	s.ServerCommon.LoadConfig(path)
-	return nil
+	return s.ServerCommon.LoadConfig(path)
 }

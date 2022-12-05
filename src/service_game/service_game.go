@@ -150,7 +150,7 @@ func (gs *GameServer) Run() {
 			lib.SugarLogger.Info("running...")
 		case msg, ok := <-gs.recvChan:
 			if ok {
-				gs.OnMessageReceived(msg)
+				go gs.OnMessageReceived(msg)
 			}
 		}
 	}
@@ -195,5 +195,7 @@ func (gs *GameServer) OnMessageReceived(msg protocol.Message) {
 				lib.SugarLogger.Errorf("Player to GameServer message error %v", err)
 			}
 		}
+	default:
+		lib.SugarLogger.Infof("GameServer received message %+v\n", msg)
 	}
 }
