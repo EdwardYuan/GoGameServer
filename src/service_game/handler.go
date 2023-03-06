@@ -90,7 +90,7 @@ func (c *Client) run() {
 					}
 				}
 			}
-		case reason, _ := <-c.closeChan:
+		case reason := <-c.closeChan:
 			switch reason {
 			case ClientCloseNormal:
 				c.agent.CloseChan <- 1
