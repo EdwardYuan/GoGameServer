@@ -7,6 +7,7 @@ import (
 	"GoGameServer/src/lib"
 	"GoGameServer/src/protocol"
 	"fmt"
+
 	"google.golang.org/protobuf/proto"
 )
 
@@ -70,7 +71,7 @@ func (c *Client) run() {
 				lib.SugarLogger.Error("handle message event is nil\n")
 				continue
 			} else {
-				fmt.Printf(name)
+				fmt.Printf("%s\n", name)
 				se.Seq = seq
 				se.Event = evt
 			}
