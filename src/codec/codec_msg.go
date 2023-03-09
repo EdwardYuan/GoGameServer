@@ -7,7 +7,7 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-//MsgCodec 实现gnet的Codec接口
+// MsgCodec 实现gnet的Codec接口
 type MsgCodec struct {
 	Head   ServerMessageHead
 	Offset uint32
@@ -25,7 +25,7 @@ func DecodeData(buf []byte) (msg *pb.ProtoInternal, err error) {
 	)
 	in = buf
 	head := new(ServerMessageHead)
-	//todo check offset
+	// todo check offset
 	readBuf, err = in.readN(MessageHeadLength)
 	head.Decode(readBuf)
 	if ok, err := head.Check(); !ok || err != nil {

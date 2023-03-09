@@ -1,9 +1,10 @@
 package game
 
 import (
+	"time"
+
 	"GoGameServer/network"
 	"GoGameServer/src/lib"
-	"time"
 )
 
 const MaxAgent = 10000
@@ -34,13 +35,13 @@ func (a *Agent) Run() {
 			}
 			/*
 				if a.ignoreExternal(se.Event) {
-					a.Warningln("ignoreExternal", se)
+					a.Warning("ignoreExternal", se)
 					continue
 				}
 			*/
 			select {
 			case <-timeout:
-				//Todo 超时处理
+				// Todo 超时处理
 			case err := <-a.HandleEvent(se):
 				if err != nil {
 
