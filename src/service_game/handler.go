@@ -25,6 +25,7 @@ const (
 	ClientCloseKill
 )
 
+// Client  of GameServer
 type Client struct {
 	info            ClientInfo
 	PlayerSessionId uint64
