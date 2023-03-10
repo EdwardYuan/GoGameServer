@@ -1,4 +1,4 @@
-//NOTE: the mechanism in this file is kind of a hack, please BE AWARE!
+// NOTE: the mechanism in this file is kind of a hack, please BE AWARE!
 package protocol
 
 import (
@@ -73,12 +73,12 @@ type PBEncoder interface {
 	PkgName() string
 }
 
-//type EncBattle struct{}
+// EncGame type EncBattle struct{}
 type EncGame struct{}
 
-//func (e EncBattle) PkgName() string {
-//	return "btevt"
-//}
+//	func (e EncBattle) PkgName() string {
+//		return "btevt"
+//	}
 func (e EncGame) PkgName() string {
 	return "gmevt"
 }

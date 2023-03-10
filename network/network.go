@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-//网络属性
+// NetworkProperty 网络属性
 type NetworkProperty struct {
 	MaxConnections         int32  //最大连接数
 	MaxReadPacketLength    uint32 //可接收的最大包长度 不含包头 min(uint32上限,int上限) 与操作系统位数有关

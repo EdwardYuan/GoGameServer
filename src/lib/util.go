@@ -16,21 +16,21 @@ const (
 	IPv6
 )
 
-//原子Bool
+// AtomBool 原子Bool
 type AtomBool struct {
 	flag int32
 }
 
-func (this *AtomBool) Set(value bool) {
+func (b *AtomBool) Set(value bool) {
 	var flag int32 = 0
 	if value {
 		flag = 1
 	}
-	atomic.StoreInt32(&(this.flag), flag)
+	atomic.StoreInt32(&(b.flag), flag)
 }
 
-func (this *AtomBool) Get() bool {
-	return atomic.LoadInt32(&(this.flag)) == 1
+func (b *AtomBool) Get() bool {
+	return atomic.LoadInt32(&(b.flag)) == 1
 }
 
 func SizeStruct(data interface{}) int {

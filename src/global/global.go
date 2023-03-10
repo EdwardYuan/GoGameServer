@@ -39,7 +39,12 @@ func RegisterService(ep []string, name string, typ string, desc string) {
 		Logger:      lib.Logger,
 	})
 	lib.FatalOnError(err, "failed to create etcd client.")
-	defer cli.Close()
+	defer func(cli *clientv3.Client) {
+		err := cli.Close()
+		if err != nil {
+			lib.LogIfError(err, "Close client error")
+		}
+	}(cli)
 	_, err = cli.Put(context.Background(), name, typ)
 	lib.LogIfError(err, name+"failed to register service to etcd")
 }
