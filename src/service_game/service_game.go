@@ -166,7 +166,7 @@ func (gs *GameServer) OnMessageReceived(msg protocol.Message) {
 		err := proto.Unmarshal(msg.Data, protoMessage)
 		lib.LogIfError(err, "Unmarshal Message error")
 		select {
-		case client.Recv <- protoMessage.Data:
+		case client.Rev <- protoMessage.Data:
 			err = client.Start()
 			lib.LogIfError(err, "start client error")
 		default:
@@ -190,7 +190,7 @@ func (gs *GameServer) OnMessageReceived(msg protocol.Message) {
 			err := proto.Unmarshal(msg.Data, protoMessage)
 			lib.LogIfError(err, "Unmarshal Message error")
 			select {
-			case client.Recv <- protoMessage.Data:
+			case client.Rev <- protoMessage.Data:
 				lib.Logger.Info("message received.\n")
 			default:
 				lib.SugarLogger.Errorf("Player to GameServer message error %v", err)

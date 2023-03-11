@@ -30,9 +30,9 @@ type Client struct {
 	info            ClientInfo
 	PlayerSessionId uint64
 	account         string
-	agent           *game.Agent
-	Recv            chan []byte
-	closeChan       chan ClientCloseReason
+	agent     *game.Agent
+	Rev       chan []byte
+	closeChan chan ClientCloseReason
 	closed          bool
 }
 
@@ -55,11 +55,11 @@ func (c *Client) Stop() (err error) {
 }
 
 func (c *Client) run() {
-	defer close(c.Recv)
+	defer close(c.Rev)
 	go c.agent.Run()
 	for {
 		select {
-		case data := <-c.Recv:
+		case data := <-c.Rev:
 			var message proto.Message
 			err := proto.Unmarshal(data, message)
 			lib.LogIfError(err, "unmarshal message error")
