@@ -31,7 +31,7 @@ func (in *inBuffer) readN(n int) (buf []byte, err error) {
 		return nil, errors.New("exceeding buffer length")
 	}
 	buf = (*in)[:n]
-	//*in = (*in)[n:]
+	// *in = (*in)[n:]
 	return
 }
 

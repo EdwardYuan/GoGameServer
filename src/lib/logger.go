@@ -32,8 +32,16 @@ func InitLogger(serviceName string) {
 }
 
 func SyncLogger() {
-	Logger.Sync()
-	SugarLogger.Sync()
+	err := Logger.Sync()
+	if err != nil {
+		log.Printf("%s\n", err.Error())
+		return
+	}
+	err = SugarLogger.Sync()
+	if err != nil {
+		log.Printf("%s\n", err.Error())
+		return
+	}
 }
 
 // SysLoggerFatal 使用go自带的log记录fatal

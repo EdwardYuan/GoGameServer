@@ -44,13 +44,13 @@ func sizeof(v reflect.Value) int {
 		sum := 0
 		keys := v.MapKeys()
 		for i := 0; i < len(keys); i++ {
-			mapkey := keys[i]
-			s := sizeof(mapkey)
+			mapKey := keys[i]
+			s := sizeof(mapKey)
 			if s < 0 {
 				return -1
 			}
 			sum += s
-			s = sizeof(v.MapIndex(mapkey))
+			s = sizeof(v.MapIndex(mapKey))
 			if s < 0 {
 				return -1
 			}

@@ -1,12 +1,13 @@
 package service_game
 
 import (
+	"fmt"
+
 	"GoGameServer/network"
 	"GoGameServer/src/codec"
 	"GoGameServer/src/game"
 	"GoGameServer/src/lib"
 	"GoGameServer/src/protocol"
-	"fmt"
 
 	"google.golang.org/protobuf/proto"
 )
@@ -30,9 +31,9 @@ type Client struct {
 	info            ClientInfo
 	PlayerSessionId uint64
 	account         string
-	agent     *game.Agent
-	Rev       chan []byte
-	closeChan chan ClientCloseReason
+	agent           *game.Agent
+	Rev             chan []byte
+	closeChan       chan ClientCloseReason
 	closed          bool
 }
 
@@ -63,7 +64,7 @@ func (c *Client) run() {
 			var message proto.Message
 			err := proto.Unmarshal(data, message)
 			lib.LogIfError(err, "unmarshal message error")
-			//Todo 反射对应消息处理函数
+			// Todo 反射对应消息处理函数
 			se := lib.SeqEvent{}
 			if seq, evt, name, _, _, err := protocol.ParseProtobufEvent(data); err != nil {
 				lib.SugarLogger.Errorf("handle message error %v", err)
@@ -87,7 +88,7 @@ func (c *Client) run() {
 					select {
 					case c.agent.Recv <- se:
 					case <-c.agent.CloseChan:
-						//Todo 退出游戏
+						// Todo 退出游戏
 					}
 				}
 			}

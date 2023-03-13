@@ -1,13 +1,14 @@
 package service_login
 
 import (
+	"encoding/json"
+	"fmt"
+
 	"GoGameServer/src/config"
 	"GoGameServer/src/global"
 	"GoGameServer/src/lib"
 	"GoGameServer/src/pb"
 	"GoGameServer/src/service_common"
-	"encoding/json"
-	"fmt"
 
 	"github.com/panjf2000/ants/v2"
 	"go.uber.org/zap"
@@ -45,7 +46,7 @@ func (lg *LoginGate) Error() string {
 }
 
 func (lg *LoginGate) Stop() {
-	//TODO close channels
+	// TODO close channels
 	lg.Rabbit.Stop()
 	lib.SugarLogger.Infof("LoginGate %d Closed.", lg.Id)
 }
@@ -57,12 +58,12 @@ func (lg *LoginGate) Start() (err error) {
 	}
 	err = lg.Rabbit.Start(config.RabbitUrl, "exchange", "queue", "fanout")
 	lib.FatalOnError(err, "Start RabbitMQ Error")
-	//conn, err := net.Dial("tcp", config.GameServerAddr+config.GameServerPort)
-	//lib.FatalOnError(err, "logingate connect to gameserver error")
-	//if conn != nil {
+	// conn, err := net.Dial("tcp", config.GameServerAddr+config.GameServerPort)
+	// lib.FatalOnError(err, "logingate connect to gameserver error")
+	// if conn != nil {
 	//	conn.Write([]byte("Hello GameServer."))
-	//}
-	//defer conn.Close()
+	// }
+	// defer conn.Close()
 	lg.Run()
 	return err
 }

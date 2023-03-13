@@ -1,6 +1,12 @@
 package run
 
 import (
+	"fmt"
+	"log"
+	"os"
+	"strconv"
+	"strings"
+
 	"GoGameServer/src/global"
 	"GoGameServer/src/lib"
 	"GoGameServer/src/service_common"
@@ -9,12 +15,7 @@ import (
 	"GoGameServer/src/service_gate"
 	"GoGameServer/src/service_login"
 	"GoGameServer/src/service_proxy"
-	"fmt"
 	"go.uber.org/zap"
-	"log"
-	"os"
-	"strconv"
-	"strings"
 )
 
 func StartServer(args []string) {

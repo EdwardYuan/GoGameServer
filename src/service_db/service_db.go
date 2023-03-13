@@ -1,10 +1,11 @@
 package service_db
 
 import (
-	"GoGameServer/src/lib"
-	"GoGameServer/src/service_common"
 	"net"
 	"time"
+
+	"GoGameServer/src/lib"
+	"GoGameServer/src/service_common"
 )
 
 type ServiceDB struct {
@@ -35,7 +36,12 @@ func (s *ServiceDB) Start() error {
 }
 
 func (s *ServiceDB) Stop() {
-	defer s.gsConn.Close()
+	defer func(gsConn net.Conn) {
+		err := gsConn.Close()
+		if err != nil {
+			lib.LogIfError(err, "stop service db error")
+		}
+	}(s.gsConn)
 }
 
 func (s *ServiceDB) Run() {

@@ -1,6 +1,10 @@
 package service_gate
 
 import (
+	"net"
+	"strings"
+	"sync"
+
 	"GoGameServer/src/codec"
 	"GoGameServer/src/global"
 	"GoGameServer/src/lib"
@@ -8,9 +12,6 @@ import (
 	"GoGameServer/src/service_common"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/proto"
-	"net"
-	"strings"
-	"sync"
 
 	"github.com/panjf2000/ants/v2"
 	"github.com/panjf2000/gnet"
@@ -51,7 +52,7 @@ func (s *ServiceGate) SendToGame(buf []byte) {
 
 func (s *ServiceGate) SendToLogin(buf []byte) {}
 
-// 不一定有用，暂时不需要gate直接和dbserver交互
+// SendToDB 不一定有用，暂时不需要gate直接和dbserver交互
 func (s *ServiceGate) SendToDB(buf []byte) {}
 
 func (s *ServiceGate) Error() string {
@@ -73,15 +74,21 @@ func (s *ServiceGate) Start() (err error) {
 	}()
 	defer func() {
 		s.workPool.Release()
-		s.gsConn.Close()
-		s.proxyConn.Close()
+		err := s.gsConn.Close()
+		if err != nil {
+			return
+		}
+		err = s.proxyConn.Close()
+		if err != nil {
+			return
+		}
 	}()
 	go func(gg *ServiceGate) {
 		err = gnet.Serve(gg, lib.GNetAddr, gnet.WithMulticore(true),
 			gnet.WithCodec(codec.MsgCodec{}),
 			gnet.WithSocketRecvBuffer(lib.MaxReceiveBufCap),
-			//gnet.WithCodec(gnet.NewFixedLengthFrameCodec(5)),
-			//gnet.WithCodec(codec.CodecProtobuf{}),
+			// gnet.WithCodec(gnet.NewFixedLengthFrameCodec(5)),
+			// gnet.WithCodec(codec.CodecProtobuf{}),
 			gnet.WithLogger(lib.SugarLogger))
 		lib.FatalOnError(err, "fatal: start gnet error")
 		lib.Log(zap.InfoLevel, "gnet listening", err)
@@ -102,22 +109,22 @@ func (s *ServiceGate) React(frame []byte, c gnet.Conn) (out []byte, action gnet.
 		go func() {
 			err := s.workPool.Submit(func() {
 				// session := lib.NewSession(c)
-				//headReader := lib.NewMessageHeadReader()
-				//headReader.Head.Decode(frame)
-				//if headReader.Head.Check() != nil {
+				// headReader := lib.NewMessageHeadReader()
+				// headReader.Head.Decode(frame)
+				// if headReader.Head.Check() != nil {
 				//	return
-				//}
-				//headReader.ReadMessage(frame[headReader.Head.HeaderLength:])
-				//switch headReader.Head.Command {
-				//case lib.NetMsgToGame:
+				// }
+				// headReader.ReadMessage(frame[headReader.Head.HeaderLength:])
+				// switch headReader.Head.Command {
+				// case lib.NetMsgToGame:
 				//	s.SendToGame(headReader.Data)
-				//case lib.NetMsgToLogin:
+				// case lib.NetMsgToLogin:
 				//	s.SendToLogin(headReader.Data)
-				//case lib.NetMsgToDB:
+				// case lib.NetMsgToDB:
 				//	s.SendToDB(headReader.Data)
-				//default:
+				// default:
 				//	return
-				//}
+				// }
 
 				/*
 					//var message proto.Message
@@ -166,7 +173,7 @@ func (s *ServiceGate) Stop() {
 func (s *ServiceGate) Run() {
 	for {
 		select {
-		case msg := <-s.msgChan:
+		case msg := <-s.msgChan: // TODO 线程安全
 			s.handleMessage(msg)
 		case <-s.runChan:
 			lib.SugarLogger.Info("running")
@@ -183,11 +190,18 @@ func (s *ServiceGate) handleMessage(msg pb.ProtoInternal) {
 
 func (s *ServiceGate) SendToProxy(data []byte) {
 	if s.proxyConn != nil {
-		s.proxyConn.Write(data)
+		_, err := s.proxyConn.Write(data)
+		if err != nil {
+			return
+		}
 	}
 }
 
 func (s *ServiceGate) LoadConfig(path string) error {
-	s.ServerCommon.LoadConfig(path)
+	err := s.ServerCommon.LoadConfig(path)
+	if err != nil {
+		lib.LogIfError(err, "SererCommon load configure file error")
+		return err
+	}
 	return nil
 }
