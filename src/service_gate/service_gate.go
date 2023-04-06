@@ -5,7 +5,6 @@ import (
 	"strings"
 	"sync"
 
-	"GoGameServer/src/codec"
 	"GoGameServer/src/global"
 	"GoGameServer/src/lib"
 	"GoGameServer/src/pb"
@@ -14,7 +13,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/panjf2000/ants/v2"
-	"github.com/panjf2000/gnet"
+	gnet "github.com/panjf2000/gnet/v2"
 )
 
 type ServiceGate struct {
@@ -28,7 +27,8 @@ type ServiceGate struct {
 	runChan   chan bool
 	h         MessageHandler
 	msgChan   chan pb.ProtoInternal
-	*gnet.EventServer
+	//*gnet.EventServer
+	*gnet.BuiltinEventEngine
 }
 
 func NewServiceGate(_name string, id int) *ServiceGate {
@@ -41,8 +41,9 @@ func NewServiceGate(_name string, id int) *ServiceGate {
 			Name: _name,
 			Id:   id,
 		},
-		msgChan:     make(chan pb.ProtoInternal, lib.MaxMessageCount),
-		EventServer: new(gnet.EventServer),
+		msgChan: make(chan pb.ProtoInternal, lib.MaxMessageCount),
+		//EventServer:        new(gnet.EventServer),
+		BuiltinEventEngine: new(gnet.BuiltinEventEngine),
 	}
 }
 
@@ -84,8 +85,9 @@ func (s *ServiceGate) Start() (err error) {
 		}
 	}()
 	go func(gg *ServiceGate) {
-		err = gnet.Serve(gg, lib.GNetAddr, gnet.WithMulticore(true),
-			gnet.WithCodec(codec.MsgCodec{}),
+		//err = gnet.Serve(gg, lib.GNetAddr, gnet.WithMulticore(true),
+		err = gnet.Run(gg, lib.GNetAddr, gnet.WithMulticore(true),
+			//gnet.WithCodec(codec.MsgCodec{}),   // TODO fix for gnet v2
 			gnet.WithSocketRecvBuffer(lib.MaxReceiveBufCap),
 			// gnet.WithCodec(gnet.NewFixedLengthFrameCodec(5)),
 			// gnet.WithCodec(codec.CodecProtobuf{}),

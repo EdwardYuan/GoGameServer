@@ -1,7 +1,6 @@
 package service_proxy
 
 import (
-	"GoGameServer/src/codec"
 	"GoGameServer/src/config"
 	"GoGameServer/src/lib"
 	"GoGameServer/src/pb"
@@ -10,7 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/panjf2000/ants/v2"
-	"github.com/panjf2000/gnet"
+	gnet "github.com/panjf2000/gnet/v2"
 	client "go.etcd.io/etcd/client/v3"
 	"google.golang.org/protobuf/proto"
 	"strconv"
@@ -77,7 +76,8 @@ func (s *ServiceProxy) OnOpened(c gnet.Conn) (out []byte, action gnet.Action) {
 
 func (s *ServiceProxy) SendToGame(name string, sessionId uint64, data []byte) {
 	if conn, ok := s.GameConnections[name]; ok {
-		if err := conn.AsyncWrite(data); err != nil { // 异步写会不会有问题，如果客户端发来的消息依赖顺序
+		if err := conn.AsyncWrite(data, nil); err != nil { //TODO fix with gnet v2
+			// 异步写会不会有问题，如果客户端发来的消息依赖顺序
 			lib.LogErrorAndReturn(err, "ServiceProxy SendToGame Error")
 		}
 	}
@@ -149,7 +149,8 @@ func (p *ServiceProxy) Start() (err error) {
 	p.Agent.Proxy = p
 	p.AddrServer(&p.info) // 首先添加自身服务到etcd
 	go func() {
-		if gnet.Serve(p, config.ProxyAddr, gnet.WithCodec(codec.CodecProtobuf{}),
+		//if gnet.Serve(p, config.ProxyAddr, gnet.WithCodec(codec.CodecProtobuf{}),
+		if gnet.Run(p, config.ProxyAddr, // TODO fix with gnet v2
 			gnet.WithMulticore(true)) != nil {
 			lib.FatalOnError(err, "Proxy Serve error")
 		}

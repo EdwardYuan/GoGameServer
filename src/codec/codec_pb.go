@@ -1,7 +1,7 @@
 package codec
 
 import (
-	"github.com/panjf2000/gnet"
+	gnet "github.com/panjf2000/gnet/v2"
 )
 
 // CodecProtobuf protocol buffer解码
@@ -14,8 +14,9 @@ func (cp CodecProtobuf) Encode(c gnet.Conn, buf []byte) ([]byte, error) {
 }
 
 func (cp CodecProtobuf) Decode(c gnet.Conn) ([]byte, error) {
-	in := c.Read()
-	idx := len(in)
-	c.ShiftN(idx)
-	return in, nil
+	//in := c.Read()
+	//idx := len(in)
+	//c.ShiftN(idx)
+	//return in, nil
+	return nil, nil
 }
