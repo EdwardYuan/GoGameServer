@@ -104,9 +104,9 @@ func (gs *GameServer) connectToGate() (err error) {
 }
 
 func (gs *GameServer) connectToDBServer() (err error) {
-	dbcfg := viper.Sub("dbserver")
-	addr := dbcfg.GetString("addr")
-	port := dbcfg.GetString("port")
+	dbConfig := viper.Sub("dbserver")
+	addr := dbConfig.GetString("addr")
+	port := dbConfig.GetString("port")
 	gs.dbConn, err = net.DialTimeout("tcp", addr+":"+port, 15*time.Second)
 	lib.LogIfError(err, "connect to db error")
 	if gs.dbConn != nil {

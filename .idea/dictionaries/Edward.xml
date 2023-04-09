@@ -1,13 +1,13 @@
 <component name="ProjectDictionaryState">
-  <dictionary name="Edward">
+  <dictionary name="edward">
     <words>
-      <w>dbserver</w>
-      <w>etcd</w>
-      <w>gnet</w>
-      <w>playerid</w>
-      <w>rabbitmq</w>
-      <w>yyyymmdd</w>
-      <w>yyyymmddhhmmss</w>
+      <w>clientv</w>
+      <w>fanout</w>
+      <w>gamegate</w>
+      <w>gameserver</w>
+      <w>itoa</w>
+      <w>logingate</w>
+      <w>recv</w>
     </words>
   </dictionary>
 </component>

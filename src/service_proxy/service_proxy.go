@@ -20,8 +20,8 @@ import (
 // 代理服务，主要用于服务注册与发现, 消息分发
 type ServiceProxy struct {
 	ProcessId int        // 进程ID ， 单机调试时用来标志每一个服务
-	info      Serverinfo // 服务端信息
-	Servers   map[string]*Serverinfo
+	info      ServerInfo // 服务端信息
+	Servers   map[string]*ServerInfo
 	Agent     *EtcdAgent
 	workPool  *ants.Pool
 	gnet.EventHandler
@@ -31,7 +31,7 @@ type ServiceProxy struct {
 
 type EtcdAgent struct {
 	Proxy         *ServiceProxy
-	RegisteredSvr chan Serverinfo
+	RegisteredSvr chan ServerInfo
 	QueryChan     chan int32
 	Client        *client.Client
 	ticker        time.Ticker
@@ -46,7 +46,7 @@ func NewEtcdAgent() *EtcdAgent {
 	lib.FatalOnError(err, "New Proxy Service error")
 	return &EtcdAgent{
 		Client:        cli,
-		RegisteredSvr: make(chan Serverinfo, 100),
+		RegisteredSvr: make(chan ServerInfo, 100),
 		ticker:        *time.NewTicker(20 * time.Second),
 	}
 }
@@ -57,7 +57,7 @@ func NewServiceProxy(_name string, id int) *ServiceProxy {
 	return &ServiceProxy{
 		ProcessId:       0, // 自己的ProcessId为0
 		info:            NewServerInfo(int32(id), lib.GetLocalIP(lib.IPv4), _name, 0),
-		Servers:         make(map[string]*Serverinfo, 1),
+		Servers:         make(map[string]*ServerInfo, 1),
 		Agent:           NewEtcdAgent(),
 		workPool:        pool,
 		MsgChan:         make(chan pb.ProtoInternal, lib.MaxMessageCount),
@@ -83,7 +83,7 @@ func (s *ServiceProxy) SendToGame(name string, sessionId uint64, data []byte) {
 	}
 }
 
-func (c *EtcdAgent) GetServerInfo(name string) *Serverinfo {
+func (c *EtcdAgent) GetServerInfo(name string) *ServerInfo {
 	resp, err := c.Client.Get(context.TODO(), "services/"+name)
 	var serverStr string
 
@@ -95,7 +95,7 @@ func (c *EtcdAgent) GetServerInfo(name string) *Serverinfo {
 	return ServerInfo
 }
 
-func makeServerInfo(value string) *Serverinfo {
+func makeServerInfo(value string) *ServerInfo {
 	var err error
 	infos := strings.Split(value, ",")
 	id, err1 := strconv.Atoi(infos[0])
@@ -107,7 +107,7 @@ func makeServerInfo(value string) *Serverinfo {
 		err = err2
 	}
 	lib.LogErrorAndReturn(err, "makeServerInfo")
-	return &Serverinfo{
+	return &ServerInfo{
 		Id:   int32(id),
 		Name: infos[1],
 		IP:   infos[2],
@@ -115,11 +115,11 @@ func makeServerInfo(value string) *Serverinfo {
 	}
 }
 
-func buildServerInfoString(s *Serverinfo) string {
+func buildServerInfoString(s *ServerInfo) string {
 	return strconv.Itoa(int(s.Id)) + "," + s.Name + "," + s.IP + strconv.Itoa(int(s.Port))
 }
 
-func (c *EtcdAgent) run(s *Serverinfo) {
+func (c *EtcdAgent) run(s *ServerInfo) {
 	for {
 		select {
 		case <-c.RegisteredSvr:
@@ -204,7 +204,7 @@ func (p *ServiceProxy) LoadConfig(path string) error {
 	return nil
 }
 
-func (p *ServiceProxy) AddrServer(s *Serverinfo) {
+func (p *ServiceProxy) AddrServer(s *ServerInfo) {
 	// 如果proxy服务的etcd client不存在，直接退出
 	if p.Agent == nil {
 		err := errors.New("no etcd agent exist")
@@ -229,15 +229,15 @@ func (s *ServiceProxy) HeartBeat() {
 }
 
 // ServerInfo is the service register information to etcd
-type Serverinfo struct {
+type ServerInfo struct {
 	Id   int32  `json:"id"`   // 服务器ID
 	Name string `json:"name"` // 服务名
 	IP   string `json:"ip"`   // 对外连接服务的 IP
 	Port int32  `json:"port"` // 对外服务端口，本机或者端口映射后得到的
 }
 
-func NewServerInfo(id int32, ip string, name string, port int32) Serverinfo {
-	return Serverinfo{
+func NewServerInfo(id int32, ip string, name string, port int32) ServerInfo {
+	return ServerInfo{
 		Id:   id,
 		Name: name,
 		IP:   ip,
