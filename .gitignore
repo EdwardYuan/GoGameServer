@@ -13,3 +13,7 @@ bin/gate.prof
 bin/game.prof
 bin/login.prof
 bin/*.prof
+/bin/DBServer
+/bin/GameGate
+/bin/LoginGate
+/bin/proxy
