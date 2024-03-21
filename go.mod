@@ -11,7 +11,7 @@ require (
 	github.com/streadway/amqp v1.0.0
 	go.etcd.io/etcd/client/v3 v3.5.5
 	go.uber.org/zap v1.23.0
-	google.golang.org/protobuf v1.30.0
+	google.golang.org/protobuf v1.33.0
 )
 
 require (
