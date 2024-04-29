@@ -59,7 +59,7 @@ func (mc MsgCodec) Encode(c gnet.Conn, buf []byte) ([]byte, error) {
 // 读取一个完整的消息包；处理组包问题
 func (mc MsgCodec) Decode(c gnet.Conn) ([]byte, error) {
 
-	//buf := c.Read()    // TODO fix with gnet v2
+	// buf := c.Read()    // TODO fix with gnet v2
 	var buf []byte // tmp
 	msg, err := DecodeData(buf)
 	lib.LogErrorAndReturn(err, "")
