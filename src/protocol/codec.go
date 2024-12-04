@@ -5,7 +5,6 @@ import (
 	"encoding/binary"
 	"errors"
 	"reflect"
-
 	"google.golang.org/protobuf/proto"
 )
 
@@ -27,9 +26,7 @@ func nameToType(name string) (reflect.Type, bool) {
 	if t, ok := protoTypesNils[name]; ok {
 		return reflect.TypeOf(t), true
 	}
-
-	//msgType := proto.MessageType(name)
-	var msgType reflect.Type
+	msgType := proto.MessageType(name)
 	if msgType == nil {
 		return nil, false
 	}
@@ -53,17 +50,8 @@ var (
 	CodeToTypeDict = map[int32]string{}
 )
 
-func init() { /*
-		for id, name := range dict.EDict_name {
-			if strings.HasPrefix(name, "pb_") {
-				name = strings.Replace(name, "_", ".", 2)
-				name = strings.Replace(name, ".", "_", 1)
-			} else {
-				name = strings.Replace(name, "_", ".", 1)
-			}
-			CodeToTypeDict[id] = name
-			TypeToCodeDict[name] = id
-		} */
+func init() {
+	// 初始化 TypeToCodeDict 和 CodeToTypeDict
 }
 
 func Decode(bs []byte) (msg *Message, headerLen, bodyLen int, err error) {
@@ -77,39 +65,25 @@ func Decode(bs []byte) (msg *Message, headerLen, bodyLen int, err error) {
 		err = ErrHeaderLengthOverflow
 		return
 	}
-	// headerSlice := bs[2 : 2+headerLen]
 	bodySlice := bs[2+headerLen:]
-
 	bodyLen = totalLen - 2 - headerLen
 
-	// // header := &packet.PacketHead{}
-	// if err = proto.Unmarshal(headerSlice, header); err != nil {
-	// 	return
-	// }
-	// ID := header.GetFId()
-
-	var name string
-	// if msgID := header.GetFMsgid(); msgID != 0 {
-	// 	name = CodeToTypeDict[msgID]
-	// } else {
-	// 	err = fmt.Errorf("message id %d not supported in CodeToTypeDict for decoding", msgID)
-	// 	return
-	// }
-
+	// 假设这里需要从 header 中提取 msgID
+	msgID := int32(0) // 这里需要从 header 中获取实际的 msgID
+	name := CodeToTypeDict[msgID]
 	t, ok := nameToType(name)
 	if !ok {
-		// err = fmt.Errorf("message type %v not supported for decoding", header.FType)
+		err = errors.New("message type not supported for decoding")
 		return
 	}
-	//TODO 不用反射
+
 	v := reflect.New(t.Elem())
 	pm := v.Interface().(proto.Message)
 	if err = proto.Unmarshal(bodySlice, pm); err != nil {
 		lib.SugarLogger.Warnf("Unmarshal failed name %s", name)
 		return
 	}
-
-	// msg = &Message{ID, pm}
+	msg = &Message{ID: msgID, Body: pm}
 	return
 }
 
@@ -118,52 +92,28 @@ func Encode(m *Message) ([]byte, string, int, int, error) {
 }
 
 func (m *Message) Encode() (out []byte, typeStr string, headerLen, bodyLen int, err error) {
-	var bodySlice []byte
-
-	bodySlice, err = proto.Marshal(m.Body)
+	bodySlice, err := proto.Marshal(m.Body)
 	if err != nil {
 		return
 	}
 
-	// var header *packet.PacketHead
-	// typeStr = m.Type()
-	// if msgID, ok := TypeToCodeDict[typeStr]; ok {
-	// 	header = &packet.PacketHead{FMsgid: msgID}
-	// } else {
-	// 	err = fmt.Errorf("TypeToCodeDict not found type %s", typeStr)
-	// 	return
-	// }
-	// // if m.ID != 0 {
-	// // 	header.FId = m.ID
-	// // }
-	// headerSlice, err := proto.Marshal(header)
-	// if err != nil {
-	// 	return
-	// }
-
-	var headerSlice []byte // 删除 编译通过用
-
-	headerLenSlice := make([]byte, 2)
-	binary.LittleEndian.PutUint16(headerLenSlice, uint16(len(headerSlice)))
-	headerLen = len(headerSlice)
-	bodyLen = len(bodySlice)
-	out = make([]byte, 2+headerLen+bodyLen)
-	copy(out[0:2], headerLenSlice)
-	copy(out[2:2+headerLen], headerSlice)
-	copy(out[2+headerLen:2+headerLen+bodyLen], bodySlice)
+	typeStr = m.Type()
+	if msgID, ok := TypeToCodeDict[typeStr]; ok {
+		headerSlice := make([]byte, 2) // 这里需要实际的头部数据
+		headerLen = len(headerSlice)
+		bodyLen = len(bodySlice)
+		out = make([]byte, 2+headerLen+bodyLen)
+		binary.LittleEndian.PutUint16(out[:2], uint16(headerLen))
+		copy(out[2:2+headerLen], headerSlice)
+		copy(out[2+headerLen:], bodySlice)
+	} else {
+		err = errors.New("TypeToCodeDict not found for type " + typeStr)
+	}
 	return
 }
 
 func AddHead(seq int32, cmd int32, bodySlice []byte) ([]byte, error) {
-	//*************************************************
-	// header := &packet.PacketHead{FId: seq, FMsgid: cmd}
-	// headerSlice, err := proto.Marshal(header)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	///// 删除 编译通过用
-	headerSlice := make([]byte, 2)
-	//////
+	headerSlice := make([]byte, 2) // 这里需要实际的头部数据
 	headerLenSlice := make([]byte, 2)
 	binary.LittleEndian.PutUint16(headerLenSlice, uint16(len(headerSlice)))
 	headerLen := len(headerSlice)
@@ -171,6 +121,6 @@ func AddHead(seq int32, cmd int32, bodySlice []byte) ([]byte, error) {
 	out := make([]byte, 2+headerLen+bodyLen)
 	copy(out[0:2], headerLenSlice)
 	copy(out[2:2+headerLen], headerSlice)
-	copy(out[2+headerLen:2+headerLen+bodyLen], bodySlice)
+	copy(out[2+headerLen:], bodySlice)
 	return out, nil
 }
