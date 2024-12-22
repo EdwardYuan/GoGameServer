@@ -24,6 +24,38 @@ func (a *Agent) handle(se lib.SeqEvent) {
 
 }
 
+
+func (a *Agent) Run() {
+    for {
+        select {
+        case se, ok := <-a.Recv:
+            timeout := time.After(10 * time.Second)
+            if !ok {
+                lib.SysLoggerFatal(nil, "agent in game, a.recv has been closed")
+            }
+            /*
+                if a.ignoreExternal(se.Event) {
+                    lib.SugarLogger.Warnw("ignoreExternal", "event", se)
+                    continue
+                }
+            */
+            select {
+            case <-timeout:
+                // Handle timeout
+                lib.SugarLogger.Warn("Event handling timed out")
+            case err := <-a.HandleEvent(se):
+                if err != nil {
+                    lib.SugarLogger.Errorw("Error handling event", "error", err)
+                }
+            }
+        case <-a.CloseChan:
+            lib.SugarLogger.Info("Agent is closing")
+            return
+        }
+    }
+}
+
+/* 
 func (a *Agent) Run() {
 	for {
 		select {
@@ -32,12 +64,12 @@ func (a *Agent) Run() {
 			if !ok {
 				panic("agent in game, a.recv has been closed")
 			}
-			/*
+			
 				if a.ignoreExternal(se.Event) {
 					a.Warningln("ignoreExternal", se)
 					continue
 				}
-			*/
+		
 			select {
 			case <-timeout:
 				//Todo 超时处理
@@ -50,7 +82,7 @@ func (a *Agent) Run() {
 			return
 		}
 	}
-}
+} */
 
 type AgentManager struct {
 	Agents map[int64]*Agent
