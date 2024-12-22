@@ -8,6 +8,7 @@
 *.log
 /bin/GoGameServer
 /bin/GoGameServer.exe
+/bin/*.exe
 bin/gate.prof
 bin/game.prof
 bin/login.prof
