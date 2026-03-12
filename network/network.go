@@ -1,11 +1,12 @@
 package network
 
 import (
-	"GoGameServer/src/lib"
-	"go.uber.org/zap"
 	"net"
 	"sync"
 	"time"
+
+	"GoGameServer/src/lib"
+	"go.uber.org/zap"
 )
 
 // NTProperty 网络属性
@@ -33,15 +34,15 @@ type Network struct {
 	address           string
 	log               *zap.SugaredLogger
 	listener          net.Listener
-	sessionMap        map[uint64]*Session //TODO session通过sessionCreateChan加入map 会有一定延迟 要注意 TODO 用最小堆优化
-	sessionNum        int32               //session数量 可能不准
-	sessionCreateChan chan *Session       //用于新建session
-	sessionCloseChan  chan *Session       //用于关闭移除session
-	sessionUniqueId   uint64              //TODO 用atomic
-	isRunning         *lib.AtomBool       //是否在运行
-	isClosing         *lib.AtomBool       //是否在关闭
+	sessionMap        map[uint64]*Session // TODO session通过sessionCreateChan加入map 会有一定延迟 要注意 TODO 用最小堆优化
+	sessionNum        int32               // session数量 可能不准
+	sessionCreateChan chan *Session       // 用于新建session
+	sessionCloseChan  chan *Session       // 用于关闭移除session
+	sessionUniqueId   uint64              // TODO 用atomic
+	isRunning         *lib.AtomBool       // 是否在运行
+	isClosing         *lib.AtomBool       // 是否在关闭
 
-	//EventChan chan *Event //会话事件需要外部读取处理
+	// EventChan chan *Event //会话事件需要外部读取处理
 }
 
 func (n *Network) newAcceptSession(c net.Conn) (session *Session, err error) {

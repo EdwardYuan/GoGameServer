@@ -1,0 +1,37 @@
+version: "3"
+services:
+  gogameserver:
+    build: .
+    ports:
+      - "8888:8888"
+      - "8889:8889"
+      - "8890:8890"
+      - "8891:8891"
+      - "9100:9100"
+    depends_on:
+      - rabbitmq
+      - etcd
+    command: ["run","game","0"]
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+  etcd:
+    image: bitnami/etcd:latest
+    environment:
+      - ALLOW_NONE_AUTHENTICATION=yes
+      - ETCD_ADVERTISE_CLIENT_URLS=http://0.0.0.0:2359
+      - ETCD_LISTEN_CLIENT_URLS=http://0.0.0.0:2359
+    ports:
+      - "2359:2359"
+  mysql:
+    image: mysql:5.7
+    environment:
+      MYSQL_ROOT_PASSWORD: example
+    ports:
+      - "3306:3306"
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"

@@ -25,7 +25,7 @@ type GameServer struct {
 	gateConn     net.Conn
 	dbConn       net.Conn
 	proxyConn    net.Conn
-	recvChan     chan protocol.Message
+	messages     chan protocol.Message
 	clients      map[uint64]*Client // gate发过来的SessionId到角色的映射
 	AgentManager *game.AgentManager
 
@@ -158,7 +158,7 @@ func (gs *GameServer) Run() {
 			gs.Stop()
 		case <-gs.runChannel:
 			lib.SugarLogger.Info("running...")
-		case msg, ok := <-gs.recvChan:
+		case msg, ok := <-gs.messages:
 			if ok {
 				gs.OnMessageReceived(msg)
 			}
