@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-//会话关闭原因
+// SessionCloseReason 会话关闭原因
 type SessionCloseReason string
 
 const (

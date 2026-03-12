@@ -32,18 +32,26 @@ func InitLogger(serviceName string) {
 }
 
 func SyncLogger() {
-	Logger.Sync()
-	SugarLogger.Sync()
+	err := Logger.Sync()
+	if err != nil {
+		log.Printf("%s\n", err.Error())
+		return
+	}
+	err = SugarLogger.Sync()
+	if err != nil {
+		log.Printf("%s\n", err.Error())
+		return
+	}
 }
 
-//SysLoggerFatal 使用go自带的log记录fatal
+// SysLoggerFatal 使用go自带的log记录fatal
 func SysLoggerFatal(err error, msg string) {
 	if err != nil {
 		log.Fatalf("Fatal: %s: %s", err, msg)
 	}
 }
 
-//FatalOnError 记录错误并panic，严重错误导致程序无法正常运转时使用
+// FatalOnError 记录错误并panic，严重错误导致程序无法正常运转时使用
 func FatalOnError(err error, msg string) {
 	if err != nil {
 		Logger.Fatal(msg)

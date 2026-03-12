@@ -22,7 +22,7 @@ func (gs *GSServer) LoadMaps() error {
 	return nil
 }
 
-// LoadConfigs这里加载的是游戏业务相关的配置，与service_game的config不同
+// LoadConfigs 这里加载的是游戏业务相关的配置，与service_game的config不同
 func (gs *GSServer) LoadConfigs(path string) error {
 	file, err := os.Open(path)
 	lib.LogIfError(err, "load gs config error")

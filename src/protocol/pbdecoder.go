@@ -1,4 +1,5 @@
-//NOTE: the mechanism in this file is kind of a hack, please BE AWARE!
+// Package protocol
+// NOTE: the mechanism in this file is kind of a hack, please BE AWARE!
 package protocol
 
 import (
@@ -52,7 +53,7 @@ type PBDecoder interface {
 	PkgName() string
 }
 
-//type DecBattle struct{}
+// DecChat type DecBattle struct{}
 type DecChat struct{}
 type DecQuery struct{}
 type DecLogin struct{}
@@ -61,9 +62,9 @@ type DecField struct{}
 type DecAction struct{}
 type DecFriend struct{}
 
-//func (d DecBattle) PkgName() string {
-//	return "battle"
-//}
+//	func (d DecBattle) PkgName() string {
+//		return "battle"
+//	}
 func (d DecChat) PkgName() string {
 	return "chat"
 }

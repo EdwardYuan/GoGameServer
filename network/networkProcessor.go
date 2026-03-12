@@ -4,7 +4,6 @@ import (
 	"GoGameServer/src/codec"
 	"GoGameServer/src/lib"
 	"GoGameServer/src/pb"
-	"errors"
 	"go.uber.org/zap"
 )
 
@@ -55,27 +54,27 @@ func NewLineBasedMessageReader(logger *zap.SugaredLogger) *LineBasedMessageReade
 }
 
 func (lr *LineBasedMessageReader) ReadMessage(session *Session) (*pb.ProtoInternal, error) {
-	size, err := session.conn.Read(lr.readBuffer[lr.readOffset:codec.MessageHeadLength])
+	// size, err := session.conn.Read(lr.readBuffer[lr.readOffset:codec.MessageHeadLength])
 	return codec.DecodeData(lr.readBuffer)
-	//------------------------------------------------
-	lib.LogErrorAndReturn(err, "")
-	lr.readOffset = uint32(size)
-	head := new(codec.ServerMessageHead)
-	if lr.readOffset != codec.MessageHeadLength {
-		err = errors.New("")
-		lib.LogErrorAndReturn(err, "")
-	}
-	head.Decode(lr.readBuffer[:codec.MessageHeadLength])
-	head.Check()
-	size, err = session.conn.Read(lr.readBuffer[:lr.head.DataLength])
-	lib.LogErrorAndReturn(err, "")
-	msgInternal := &pb.ProtoInternal{
-		Cmd:       int32(head.Cmd),
-		Dst:       "",
-		SessionId: uint64(session.id),
-		Data:      lr.readBuffer,
-	}
-	return msgInternal, err
+	// ------------------------------------------------
+	// lib.LogErrorAndReturn(err, "")
+	// lr.readOffset = uint32(size)
+	// head := new(codec.ServerMessageHead)
+	// if lr.readOffset != codec.MessageHeadLength {
+	// 	err = errors.New("")
+	// 	lib.LogErrorAndReturn(err, "")
+	// }
+	// head.Decode(lr.readBuffer[:codec.MessageHeadLength])
+	// head.Check()
+	// size, err = session.conn.Read(lr.readBuffer[:lr.head.DataLength])
+	// lib.LogErrorAndReturn(err, "")
+	// msgInternal := &pb.ProtoInternal{
+	// 	Cmd:       int32(head.Cmd),
+	// 	Dst:       "",
+	// 	SessionId: uint64(session.id),
+	// 	Data:      lr.readBuffer,
+	// }
+	// return msgInternal, err
 }
 
 type LineBasedMessageWriter struct {

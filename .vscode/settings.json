@@ -5,5 +5,7 @@
     ],
     "restructuredtext.pythonRecommendation.disabled": true,
     "restructuredtext.languageServer.disabled": true,
-    "cmake.configureOnOpen": false
+    "cmake.configureOnOpen": false,
+    "IDX.aI.enableInlineCompletion": true,
+    "IDX.aI.enableCodebaseIndexing": true
 }

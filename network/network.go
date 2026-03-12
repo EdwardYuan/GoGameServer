@@ -9,27 +9,27 @@ import (
 	"go.uber.org/zap"
 )
 
-// 网络属性
-type NetworkProperty struct {
-	MaxConnections         int32  // 最大连接数
-	MaxReadPacketLength    uint32 // 可接收的最大包长度 不含包头 min(uint32上限,int上限) 与操作系统位数有关
-	MaxWritePacketLength   uint32 // 可发送的最大包长度 不含包头 min(uint32上限,int上限) 与操作系统位数有关
-	EventChanCapacity      uint32 // 事件chan的长度上限
-	WriteChanCapacity      uint32 // 发送chan的长度上限
-	HeartBeatWriteInterval int64  // 心跳发送间隔
-	HeartBeatReadTimeout   int64  // 心跳接收超时时间 超时后自动关闭
+// NTProperty 网络属性
+type NTProperty struct {
+	MaxConnections         int32  //最大连接数
+	MaxReadPacketLength    uint32 //可接收的最大包长度 不含包头 min(uint32上限,int上限) 与操作系统位数有关
+	MaxWritePacketLength   uint32 //可发送的最大包长度 不含包头 min(uint32上限,int上限) 与操作系统位数有关
+	EventChanCapacity      uint32 //事件chan的长度上限
+	WriteChanCapacity      uint32 //发送chan的长度上限
+	HeartBeatWriteInterval int64  //心跳发送间隔
+	HeartBeatReadTimeout   int64  //心跳接收超时时间 超时后自动关闭
 }
 
 type Network struct {
 	mutex              sync.Mutex
 	createSessionMutex sync.Mutex
-	property           *NetworkProperty       // 属性
-	ticker             *time.Ticker           // 帧循环
-	closeChan          chan int               // 用来关闭帧循环的channel
-	endChan            chan int               // 帧循环结束信号channel
-	internalChan       chan map[string]string // 内部循环channel
-	internalCloseChan  chan int               // 用来关闭内部循环的channel
-	internalEndChan    chan int               // 内部循环结束信号channel
+	property           *NTProperty            //属性
+	ticker             *time.Ticker           //帧循环
+	closeChan          chan int               //用来关闭帧循环的channel
+	endChan            chan int               //帧循环结束信号channel
+	internalChan       chan map[string]string //内部循环channel
+	internalCloseChan  chan int               //用来关闭内部循环的channel
+	internalEndChan    chan int               //内部循环结束信号channel
 
 	address           string
 	log               *zap.SugaredLogger

@@ -16,9 +16,10 @@ func NewRabbitClient() *RabbitClient {
 	return &RabbitClient{}
 }
 
-//Start makes a connection of RabbitMQ and a channel, then declare an exchange and a queue
-//it receives four arguments: url represents RabbitMQ host, xName represents the exchange
-//name, qName means the queue name and the xType defines the type of exchange.
+// Start makes a connection of RabbitMQ and a channel, then declare an exchange
+// and a queue it receives four arguments: url represents RabbitMQ host, xName
+// represents the exchange name, qName means the queue name and the xType defines
+// the type of exchange.
 func (r *RabbitClient) Start(url string, xName string, qName string, xType string) error {
 	var err error
 	r.Conn, err = amqp.Dial(url)
@@ -50,11 +51,21 @@ func (r *RabbitClient) Start(url string, xName string, qName string, xType strin
 }
 
 func (r *RabbitClient) Stop() {
-	defer r.Channel.Close()
-	defer r.Conn.Close()
+	defer func(Channel *amqp.Channel) {
+		err := Channel.Close()
+		if err != nil {
+			LogIfError(err, "Close Rabbit Client error")
+		}
+	}(r.Channel)
+	defer func(Conn *amqp.Connection) {
+		err := Conn.Close()
+		if err != nil {
+			LogIfError(err, "Close amqp Connection error")
+		}
+	}(r.Conn)
 }
 
-//NewExchange declare a new exchange and add to map
+// NewExchange declare a new exchange and add to map
 func (r *RabbitClient) NewExchange(xName string, kind string, durable bool,
 	autoDel bool, internal bool, noWait bool, args amqp.Table) error {
 	err := r.Channel.ExchangeDeclare(
@@ -91,7 +102,7 @@ func (r *RabbitClient) NewQueue(qName string, durable bool, autoDel bool,
 	return err
 }
 
-//ExchangeBind wrap amqp.ExchangeBind method
+// ExchangeBind wrap amqp.ExchangeBind method
 func (r *RabbitClient) ExchangeBind(dest string, src string, routingKey string,
 	noWait bool, args amqp.Table) error {
 	return r.Channel.ExchangeBind(
@@ -103,6 +114,7 @@ func (r *RabbitClient) ExchangeBind(dest string, src string, routingKey string,
 	)
 }
 
+// DefaultBind Set the default bind of rabbit client
 func (r *RabbitClient) DefaultBind(dest string, src string, key string) error {
 	return r.Channel.ExchangeBind(
 		dest,
@@ -113,7 +125,7 @@ func (r *RabbitClient) DefaultBind(dest string, src string, key string) error {
 	)
 }
 
-//QueueBind wrap amqp.QueueBind method
+// QueueBind wrap amqp.QueueBind method
 func (r *RabbitClient) QueueBind(name string, bindingKey string, xName string,
 	noWait bool, args amqp.Table) error {
 	return r.Channel.QueueBind(

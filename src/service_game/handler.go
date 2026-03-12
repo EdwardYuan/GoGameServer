@@ -1,12 +1,14 @@
 package service_game
 
 import (
+	"fmt"
+
 	"GoGameServer/network"
 	"GoGameServer/src/codec"
 	"GoGameServer/src/game"
 	"GoGameServer/src/lib"
 	"GoGameServer/src/protocol"
-	"fmt"
+
 	"google.golang.org/protobuf/proto"
 )
 
@@ -24,12 +26,13 @@ const (
 	ClientCloseKill
 )
 
+// Client  of GameServer
 type Client struct {
 	info            ClientInfo
 	PlayerSessionId uint64
 	account         string
 	agent           *game.Agent
-	Recv            chan []byte
+	Rev             chan []byte
 	closeChan       chan ClientCloseReason
 	closed          bool
 }
@@ -53,15 +56,15 @@ func (c *Client) Stop() (err error) {
 }
 
 func (c *Client) run() {
-	defer close(c.Recv)
+	defer close(c.Rev)
 	go c.agent.Run()
 	for {
 		select {
-		case data := <-c.Recv:
+		case data := <-c.Rev:
 			var message proto.Message
 			err := proto.Unmarshal(data, message)
 			lib.LogIfError(err, "unmarshal message error")
-			//Todo 反射对应消息处理函数
+			// Todo 反射对应消息处理函数
 			se := lib.SeqEvent{}
 			if seq, evt, name, _, _, err := protocol.ParseProtobufEvent(data); err != nil {
 				lib.SugarLogger.Errorf("handle message error %v", err)
@@ -70,7 +73,7 @@ func (c *Client) run() {
 				lib.SugarLogger.Error("handle message event is nil\n")
 				continue
 			} else {
-				fmt.Printf(name)
+				fmt.Printf("%s\n", name)
 				se.Seq = seq
 				se.Event = evt
 			}
@@ -85,11 +88,11 @@ func (c *Client) run() {
 					select {
 					case c.agent.Recv <- se:
 					case <-c.agent.CloseChan:
-						//Todo 退出游戏
+						// Todo 退出游戏
 					}
 				}
 			}
-		case reason, _ := <-c.closeChan:
+		case reason := <-c.closeChan:
 			switch reason {
 			case ClientCloseNormal:
 				c.agent.CloseChan <- 1
