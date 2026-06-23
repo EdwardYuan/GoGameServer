@@ -2,6 +2,7 @@ package lib
 
 import (
 	"log"
+	"os"
 	"time"
 
 	"go.uber.org/zap"
@@ -15,6 +16,9 @@ var (
 
 func InitLogger(serviceName string) {
 	Logger, _ = zap.NewProduction()
+	if err := os.MkdirAll("log", 0755); err != nil {
+		log.Fatal("InitLogger mkdir log error:", err)
+	}
 	fileName := "log/" + serviceName + "_" + FormatDateTime(TimeFormat9, time.Now()) + ".log"
 	cfg := zap.NewProductionEncoderConfig()
 	cfg.EncodeTime = zapcore.RFC3339NanoTimeEncoder

@@ -1,6 +1,7 @@
 package service_proxy
 
 import (
+	"GoGameServer/src/codec"
 	"GoGameServer/src/config"
 	"GoGameServer/src/lib"
 	"GoGameServer/src/pb"
@@ -11,7 +12,6 @@ import (
 	"github.com/panjf2000/ants/v2"
 	gnet "github.com/panjf2000/gnet/v2"
 	client "go.etcd.io/etcd/client/v3"
-	"google.golang.org/protobuf/proto"
 	"strconv"
 	"strings"
 	"time"
@@ -76,7 +76,18 @@ func (s *ServiceProxy) OnOpened(c gnet.Conn) (out []byte, action gnet.Action) {
 
 func (s *ServiceProxy) SendToGame(name string, sessionId uint64, data []byte) {
 	if conn, ok := s.GameConnections[name]; ok {
-		if err := conn.AsyncWrite(data, nil); err != nil { //TODO fix with gnet v2
+		msg := &pb.ProtoInternal{
+			Cmd:       pb.InternalProxyToGame,
+			Dst:       name,
+			SessionId: sessionId,
+			Data:      data,
+		}
+		packet, err := codec.DefaultFrameCodec().Encode(uint8(msg.Cmd), 0, msg)
+		if err != nil {
+			lib.LogErrorAndReturn(err, "ServiceProxy encode message error")
+			return
+		}
+		if err := conn.AsyncWrite(packet, nil); err != nil {
 			// 异步写会不会有问题，如果客户端发来的消息依赖顺序
 			lib.LogErrorAndReturn(err, "ServiceProxy SendToGame Error")
 		}
@@ -149,9 +160,7 @@ func (p *ServiceProxy) Start() (err error) {
 	p.Agent.Proxy = p
 	p.AddrServer(&p.info) // 首先添加自身服务到etcd
 	go func() {
-		//if gnet.Serve(p, config.ProxyAddr, gnet.WithCodec(codec.CodecProtobuf{}),
-		if gnet.Run(p, config.ProxyAddr, // TODO fix with gnet v2
-			gnet.WithMulticore(true)) != nil {
+		if err = gnet.Run(p, config.ProxyAddr, gnet.WithMulticore(true)); err != nil {
 			lib.FatalOnError(err, "Proxy Serve error")
 		}
 	}()
@@ -162,28 +171,51 @@ func (p *ServiceProxy) Start() (err error) {
 	return
 }
 
+func (p *ServiceProxy) OnTraffic(c gnet.Conn) (action gnet.Action) {
+	frameCodec := codec.DefaultFrameCodec()
+	for {
+		frame, err := frameCodec.Decode(c)
+		if err == codec.ErrIncompletePacket {
+			return
+		}
+		if err != nil {
+			lib.LogErrorAndReturn(err, "ServiceProxy decode frame error")
+			return gnet.Close
+		}
+		p.handleFrame(frame.Body)
+	}
+}
+
 func (p *ServiceProxy) React(frame []byte, c gnet.Conn) (out []byte, action gnet.Action) {
-	go p.workPool.Submit(
-		func() {
-			var message *pb.ProtoInternal
-			proto.Unmarshal(frame, message)
+	p.handleFrame(frame)
+	return
+}
+
+func (p *ServiceProxy) handleFrame(frame []byte) {
+	go func() {
+		if err := p.workPool.Submit(func() {
+			message := &pb.ProtoInternal{}
+			if err := codec.Unmarshal(frame, message); err != nil {
+				lib.LogErrorAndReturn(err, "ServiceProxy unmarshal message error")
+				return
+			}
 			switch message.Cmd {
 			case pb.InternalGateToProxy:
 				dst := message.Dst
-				if service, ok := p.Servers[dst]; ok {
-					if strings.Contains(service.Name, "game") {
-						postMsg := pb.ProtoInternal{
-							Cmd:       pb.InternalProxyToGame,
-							Dst:       dst,
-							SessionId: message.SessionId,
-							Data:      frame,
-						}
-						p.MsgChan <- postMsg
+				if service, ok := p.Servers[dst]; ok && strings.Contains(service.Name, "game") {
+					postMsg := pb.ProtoInternal{
+						Cmd:       pb.InternalProxyToGame,
+						Dst:       dst,
+						SessionId: message.SessionId,
+						Data:      frame,
 					}
+					p.MsgChan <- postMsg
 				}
 			}
-		})
-	return
+		}); err != nil {
+			lib.LogErrorAndReturn(err, "ServiceProxy submit message error")
+		}
+	}()
 }
 
 func (p *ServiceProxy) Stop() {

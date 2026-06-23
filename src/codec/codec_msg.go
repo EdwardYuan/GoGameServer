@@ -15,7 +15,11 @@ type MsgCodec struct {
 }
 
 func EncodeMessage(msg *pb.ProtoInternal) (out []byte, err error) {
-	return
+	body, err := Marshal(msg)
+	if err != nil {
+		return nil, err
+	}
+	return EncodeFrame(uint8(msg.Cmd), 0, body)
 }
 
 func DecodeData(buf []byte) (msg *pb.ProtoInternal, err error) {

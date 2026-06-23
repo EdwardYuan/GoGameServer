@@ -1,5 +1,4 @@
 #!/bin/bash
-if [! -d "log"]; then
-    mkdir "log"
-fi
+cd "$(dirname "$0")" || exit 1
+mkdir -p "log"
 ./GoGameServer run game 0

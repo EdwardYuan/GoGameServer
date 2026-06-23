@@ -5,12 +5,13 @@ import (
 	"strings"
 	"sync"
 
+	"GoGameServer/src/codec"
+	"GoGameServer/src/config"
 	"GoGameServer/src/global"
 	"GoGameServer/src/lib"
 	"GoGameServer/src/pb"
 	"GoGameServer/src/service_common"
 	"go.uber.org/zap"
-	"google.golang.org/protobuf/proto"
 
 	"github.com/panjf2000/ants/v2"
 	gnet "github.com/panjf2000/gnet/v2"
@@ -85,12 +86,9 @@ func (s *ServiceGate) Start() (err error) {
 		}
 	}()
 	go func(gg *ServiceGate) {
-		//err = gnet.Serve(gg, lib.GNetAddr, gnet.WithMulticore(true),
-		err = gnet.Run(gg, lib.GNetAddr, gnet.WithMulticore(true),
-			//gnet.WithCodec(codec.MsgCodec{}),   // TODO fix for gnet v2
+		addr := "tcp://" + config.GameGateAddr + ":" + config.GameGatePort
+		err = gnet.Run(gg, addr, gnet.WithMulticore(true),
 			gnet.WithSocketRecvBuffer(lib.MaxReceiveBufCap),
-			// gnet.WithCodec(gnet.NewFixedLengthFrameCodec(5)),
-			// gnet.WithCodec(codec.CodecProtobuf{}),
 			gnet.WithLogger(lib.SugarLogger))
 		lib.FatalOnError(err, "fatal: start gnet error")
 		lib.Log(zap.InfoLevel, "gnet listening", err)
@@ -100,7 +98,27 @@ func (s *ServiceGate) Start() (err error) {
 	return
 }
 
+func (s *ServiceGate) OnTraffic(c gnet.Conn) (action gnet.Action) {
+	frameCodec := codec.DefaultFrameCodec()
+	for {
+		frame, err := frameCodec.Decode(c)
+		if err == codec.ErrIncompletePacket {
+			return
+		}
+		if err != nil {
+			lib.LogErrorAndReturn(err, "ServiceGate decode frame error")
+			return gnet.Close
+		}
+		s.handleFrame(frame.Body)
+	}
+}
+
 func (s *ServiceGate) React(frame []byte, c gnet.Conn) (out []byte, action gnet.Action) {
+	s.handleFrame(frame)
+	return
+}
+
+func (s *ServiceGate) handleFrame(frame []byte) {
 	var err error
 	if s.workPool == nil {
 		s.workPool, err = ants.NewPool(global.DefaultPoolSize)
@@ -110,45 +128,14 @@ func (s *ServiceGate) React(frame []byte, c gnet.Conn) (out []byte, action gnet.
 		s.wg.Add(1)
 		go func() {
 			err := s.workPool.Submit(func() {
-				// session := lib.NewSession(c)
-				// headReader := lib.NewMessageHeadReader()
-				// headReader.Head.Decode(frame)
-				// if headReader.Head.Check() != nil {
-				//	return
-				// }
-				// headReader.ReadMessage(frame[headReader.Head.HeaderLength:])
-				// switch headReader.Head.Command {
-				// case lib.NetMsgToGame:
-				//	s.SendToGame(headReader.Data)
-				// case lib.NetMsgToLogin:
-				//	s.SendToLogin(headReader.Data)
-				// case lib.NetMsgToDB:
-				//	s.SendToDB(headReader.Data)
-				// default:
-				//	return
-				// }
-
-				/*
-					//var message proto.Message
-					msg := &pb.Person1{}
-					err := proto.Unmarshal(frame, msg)
-					lib.LogIfError(err, "unmarshal message error")
-					if !s.h.Check(msg) {
-						return
-					}
-					lib.SugarLogger.Info(msg.Id)
-					lib.SugarLogger.Info(msg.Name)
-					lib.SugarLogger.Info(msg.Email)
-				*/
-
 				msg := &pb.ProtoInternal{}
-				err = proto.Unmarshal(frame, msg)
+				err = codec.Unmarshal(frame, msg)
 				lib.LogErrorAndReturn(err, "")
 				if msg.Dst != s.Name {
 					switch msg.Cmd {
 					case pb.InternalGateToProxy:
 						if strings.Contains(msg.Dst, "proxy") {
-							s.SendToProxy(frame)
+							s.SendToProxyMessage(msg)
 						}
 					case pb.InternalProxyToGate:
 						s.msgChan <- *msg
@@ -160,9 +147,7 @@ func (s *ServiceGate) React(frame []byte, c gnet.Conn) (out []byte, action gnet.
 			}
 			s.wg.Done()
 		}()
-		s.wg.Wait()
 	}
-	return
 }
 
 func (s *ServiceGate) Stop() {
@@ -196,6 +181,20 @@ func (s *ServiceGate) SendToProxy(data []byte) {
 		if err != nil {
 			return
 		}
+	}
+}
+
+func (s *ServiceGate) SendToProxyMessage(msg *pb.ProtoInternal) {
+	if s.proxyConn == nil || msg == nil {
+		return
+	}
+	packet, err := codec.DefaultFrameCodec().Encode(uint8(msg.Cmd), 0, msg)
+	if err != nil {
+		lib.LogErrorAndReturn(err, "ServiceGate encode proxy message error")
+		return
+	}
+	if _, err := s.proxyConn.Write(packet); err != nil {
+		lib.LogErrorAndReturn(err, "ServiceGate send proxy message error")
 	}
 }
 

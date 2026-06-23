@@ -3,6 +3,7 @@ package codec
 import (
 	"encoding/binary"
 	"errors"
+	"fmt"
 )
 
 const (
@@ -64,14 +65,37 @@ func (sh *ServerMessageHead) Decode(buf []byte) {
 	sh.OnLineIdx = int(binary.LittleEndian.Uint64(buf[11:19]))
 }
 
-func (sh *ServerMessageHead) Encode(buf []byte) {
+func (sh *ServerMessageHead) EncodeTo(buf []byte) error {
+	if len(buf) < MessageHeadLength {
+		return fmt.Errorf("message head buffer too short: %d", len(buf))
+	}
+	if sh.DataLength < 0 {
+		return errors.New("negative data length is invalid")
+	}
+	if sh.DataLength > ServerMaxReceiveLength {
+		return fmt.Errorf("data length %d exceeds max receive length %d", sh.DataLength, ServerMaxReceiveLength)
+	}
+	if sh.OnLineIdx < 0 {
+		return errors.New("negative online index is invalid")
+	}
 	buf[0] = sh.Flag
 	buf[1] = sh.PieceFlag
 	buf[2] = sh.Cmd
-	binary.BigEndian.PutUint32(buf[3:11], uint32(sh.DataLength))
-	binary.BigEndian.PutUint32(buf[11:19], uint32(sh.OnLineIdx))
+	binary.LittleEndian.PutUint64(buf[3:11], uint64(sh.DataLength))
+	binary.LittleEndian.PutUint64(buf[11:19], uint64(sh.OnLineIdx))
+	return nil
+}
+
+func (sh *ServerMessageHead) Encode(buf []byte) {
+	_ = sh.EncodeTo(buf)
 }
 
 func (sh *ServerMessageHead) Check() (finished bool, err error) {
+	if sh.DataLength < 0 {
+		return false, errors.New("negative data length is invalid")
+	}
+	if sh.DataLength > ServerMaxReceiveLength {
+		return false, fmt.Errorf("data length %d exceeds max receive length %d", sh.DataLength, ServerMaxReceiveLength)
+	}
 	return true, nil
 }
