@@ -1,3 +1,7 @@
+// messageHead.go 定义服务间消息帧的固定长度包头。
+//
+// 当前包头长度为 19 字节，采用小端序编码：
+// 1 字节 Flag、1 字节 PieceFlag、1 字节 Cmd、8 字节 DataLength、8 字节 OnLineIdx。
 package codec
 
 import (
@@ -7,10 +11,17 @@ import (
 )
 
 const (
+	// ServerMaxReceiveLength 限制单个消息体的最大长度，防止异常包占用过多内存。
 	ServerMaxReceiveLength = 255 * 1024
-	MessageHeadLength      = 19
+
+	// MessageHeadLength 是服务间消息头的固定字节数。
+	MessageHeadLength = 19
 )
 
+// ServerMessageHead 表示服务间传输帧的固定包头。
+//
+// Flag 和 PieceFlag 当前保留给协议标记或分片能力；Cmd 表示业务命令；
+// DataLength 表示后续消息体长度；OnLineIdx 表示连接或在线索引。
 type ServerMessageHead struct {
 	Flag       byte
 	PieceFlag  byte
@@ -19,44 +30,9 @@ type ServerMessageHead struct {
 	OnLineIdx  int
 }
 
-type inBuffer []byte
-
-func (in *inBuffer) readN(n int) (buf []byte, err error) {
-	if n == 0 {
-		return nil, nil
-	}
-
-	if n < 0 {
-		return nil, errors.New("negative length is invalid")
-	} else if n > len(*in) {
-		return nil, errors.New("exceeding buffer length")
-	}
-	buf = (*in)[:n]
-	// *in = (*in)[n:]
-	return
-}
-
-func (in *inBuffer) read(begin, end int) (buf []byte, err error) {
-	if begin*end <= 0 {
-		return nil, errors.New("negative index")
-	}
-	if end <= begin {
-		return nil, errors.New("end of buffer less than begin")
-	}
-	if end > len(*in) {
-		return nil, errors.New("exceeding buffer length")
-	}
-	buf = (*in)[begin:end]
-	return
-}
-
-func (in *inBuffer) ShiftN(n int) {
-	if n < 0 || n >= len(*in) {
-		return
-	}
-	*in = (*in)[n:]
-}
-
+// Decode 从 19 字节包头缓冲区中解析 ServerMessageHead。
+//
+// 调用方必须保证 buf 长度至少为 MessageHeadLength。
 func (sh *ServerMessageHead) Decode(buf []byte) {
 	sh.Flag = buf[0]
 	sh.PieceFlag = buf[1]
@@ -65,6 +41,9 @@ func (sh *ServerMessageHead) Decode(buf []byte) {
 	sh.OnLineIdx = int(binary.LittleEndian.Uint64(buf[11:19]))
 }
 
+// EncodeTo 将 ServerMessageHead 编码到调用方提供的缓冲区。
+//
+// 该方法会校验缓冲区长度、消息体长度和在线索引范围。
 func (sh *ServerMessageHead) EncodeTo(buf []byte) error {
 	if len(buf) < MessageHeadLength {
 		return fmt.Errorf("message head buffer too short: %d", len(buf))
@@ -86,10 +65,16 @@ func (sh *ServerMessageHead) EncodeTo(buf []byte) error {
 	return nil
 }
 
+// Encode 将 ServerMessageHead 编码到缓冲区，并忽略校验错误。
+//
+// 该方法保留给旧调用点兼容；新代码应优先使用 EncodeTo 获取错误。
 func (sh *ServerMessageHead) Encode(buf []byte) {
 	_ = sh.EncodeTo(buf)
 }
 
+// Check 校验包头中的长度字段是否在协议允许范围内。
+//
+// finished 目前固定表示校验完成；err 非空表示包头不可接受。
 func (sh *ServerMessageHead) Check() (finished bool, err error) {
 	if sh.DataLength < 0 {
 		return false, errors.New("negative data length is invalid")

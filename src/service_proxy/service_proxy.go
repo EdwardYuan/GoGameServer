@@ -82,7 +82,7 @@ func (s *ServiceProxy) SendToGame(name string, sessionId uint64, data []byte) {
 			SessionId: sessionId,
 			Data:      data,
 		}
-		packet, err := codec.DefaultFrameCodec().Encode(uint8(msg.Cmd), 0, msg)
+		packet, err := codec.EncodeMessage(msg)
 		if err != nil {
 			lib.LogErrorAndReturn(err, "ServiceProxy encode message error")
 			return
@@ -157,6 +157,9 @@ func (c *EtcdAgent) run(s *ServerInfo) {
 }
 
 func (p *ServiceProxy) Start() (err error) {
+	if err = codec.SetDefaultCodecScheme(codec.CodecSchemeProtobuf); err != nil {
+		return err
+	}
 	p.Agent.Proxy = p
 	p.AddrServer(&p.info) // 首先添加自身服务到etcd
 	go func() {

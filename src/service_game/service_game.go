@@ -65,6 +65,9 @@ func (gs *GameServer) RegisterService() {
 }
 
 func (gs *GameServer) Start() (err error) {
+	if err = codec.SetDefaultCodecScheme(codec.CodecSchemeProtobuf); err != nil {
+		return err
+	}
 	gs.ServerCommon.Start()
 	lib.SugarLogger.Info("Service ", gs.Name, " Start...")
 	// gs.RegisterService()

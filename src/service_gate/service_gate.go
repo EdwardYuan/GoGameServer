@@ -66,6 +66,9 @@ func (s *ServiceGate) Error() string {
 }
 
 func (s *ServiceGate) Start() (err error) {
+	if err = codec.SetDefaultCodecScheme(codec.CodecSchemeProtobuf); err != nil {
+		return err
+	}
 	lib.SugarLogger.Info("Service Gate Start: ", s.Name)
 	s.ServerCommon.Start()
 	go func() {
@@ -188,7 +191,7 @@ func (s *ServiceGate) SendToProxyMessage(msg *pb.ProtoInternal) {
 	if s.proxyConn == nil || msg == nil {
 		return
 	}
-	packet, err := codec.DefaultFrameCodec().Encode(uint8(msg.Cmd), 0, msg)
+	packet, err := codec.EncodeMessage(msg)
 	if err != nil {
 		lib.LogErrorAndReturn(err, "ServiceGate encode proxy message error")
 		return

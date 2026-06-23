@@ -1,3 +1,7 @@
+// codec_msg.go 提供 ProtoInternal 专用的自定义消息体编码。
+//
+// 该文件包含两个层次：MsgSerializer 只负责 ProtoInternal 的 Body 编码；
+// MsgCodec 是兼容 gnet Codec 风格的薄封装，实际拆包仍复用 FrameCodec。
 package codec
 
 import (
@@ -11,28 +15,46 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-// MsgCodec 实现gnet的Codec接口
+// MsgCodec 是兼容 gnet Codec 风格的消息编解码器。
+//
+// 新的服务间拆包逻辑集中在 FrameCodec，这个类型只保留给旧调用点过渡使用。
 type MsgCodec struct {
 	Head   ServerMessageHead
 	Offset uint32
 	Data   []byte
 }
 
+// MsgSerializer 使用固定字段布局序列化 pb.ProtoInternal。
 type MsgSerializer struct{}
 
 const (
-	msgCmdLength        = 4
-	msgSessionIDLength  = 8
-	msgDstLengthLength  = 2
+	// msgCmdLength 是自定义消息体中 Cmd 字段的字节数。
+	msgCmdLength = 4
+
+	// msgSessionIDLength 是自定义消息体中 SessionId 字段的字节数。
+	msgSessionIDLength = 8
+
+	// msgDstLengthLength 是 Dst 字符串长度字段的字节数。
+	msgDstLengthLength = 2
+
+	// msgDataLengthLength 是 Data 字节数组长度字段的字节数。
 	msgDataLengthLength = 4
-	msgMinLength        = msgCmdLength + msgSessionIDLength + msgDstLengthLength + msgDataLengthLength
-	msgMaxDstLength     = 0xffff
+
+	// msgMinLength 是没有 Dst 和 Data 内容时的最小消息体长度。
+	msgMinLength = msgCmdLength + msgSessionIDLength + msgDstLengthLength + msgDataLengthLength
+
+	// msgMaxDstLength 是 Dst 字段可编码的最大字节数。
+	msgMaxDstLength = 0xffff
 )
 
+// Name 返回自定义 ProtoInternal 编码协议名称。
 func (MsgSerializer) Name() string {
 	return string(CodecSchemeMsg)
 }
 
+// Marshal 将 pb.ProtoInternal 编码为自定义二进制消息体。
+//
+// 布局为 Cmd、SessionId、Dst 长度、Dst 内容、Data 长度、Data 内容。
 func (MsgSerializer) Marshal(msg proto.Message) ([]byte, error) {
 	internal, ok := msg.(*pb.ProtoInternal)
 	if !ok {
@@ -60,6 +82,7 @@ func (MsgSerializer) Marshal(msg proto.Message) ([]byte, error) {
 	return out, nil
 }
 
+// Unmarshal 将自定义二进制消息体解析到 pb.ProtoInternal。
 func (MsgSerializer) Unmarshal(data []byte, msg proto.Message) error {
 	internal, ok := msg.(*pb.ProtoInternal)
 	if !ok {
@@ -92,42 +115,45 @@ func (MsgSerializer) Unmarshal(data []byte, msg proto.Message) error {
 	return nil
 }
 
+// EncodeMessage 将内部服务消息序列化并封装为完整服务间消息帧。
+//
+// 该函数会校验 Cmd 是否能安全写入一字节帧头，避免静默截断。
 func EncodeMessage(msg *pb.ProtoInternal) (out []byte, err error) {
-	body, err := Marshal(msg)
+	if msg == nil {
+		return nil, errors.New("cannot encode nil ProtoInternal message")
+	}
+	if msg.Cmd < 0 || msg.Cmd > 0xff {
+		return nil, fmt.Errorf("message cmd %d exceeds uint8 range", msg.Cmd)
+	}
+	return DefaultFrameCodec().Encode(uint8(msg.Cmd), 0, msg)
+}
+
+// DecodeData 从完整帧字节中解析出兼容旧接口的 pb.ProtoInternal。
+//
+// 该函数只填充帧头中的 Cmd 和原始 Body；Body 的 protobuf 反序列化由调用方完成。
+func DecodeData(buf []byte) (msg *pb.ProtoInternal, err error) {
+	frame, _, err := DecodeFrame(buf)
 	if err != nil {
 		return nil, err
 	}
-	return EncodeFrame(uint8(msg.Cmd), 0, body)
-}
-
-func DecodeData(buf []byte) (msg *pb.ProtoInternal, err error) {
-	var (
-		in      inBuffer
-		readBuf inBuffer
-	)
-	in = buf
-	head := new(ServerMessageHead)
-	// todo check offset
-	readBuf, err = in.readN(MessageHeadLength)
-	head.Decode(readBuf)
-	if ok, err := head.Check(); !ok || err != nil {
-		if lib.LogErrorAndReturn(err, "Decode head error") {
-			return nil, err
-		}
-	}
-	in.ShiftN(MessageHeadLength)
-	body, err := in.readN(head.DataLength)
-	outMsg := &pb.ProtoInternal{
-		Cmd:       int32(head.Cmd),
+	return &pb.ProtoInternal{
+		Cmd:       int32(frame.Head.Cmd),
 		Dst:       "",
 		SessionId: 0,
-		Data:      body,
-	}
-	msg = outMsg
-	return
+		Data:      frame.Body,
+	}, nil
 }
 
-// Encode encodes frames upon server responses into TCP stream.
+// decodeFrameBody 从 gnet 连接中读取一个完整帧并返回原始消息体。
+func decodeFrameBody(c gnet.Conn) ([]byte, error) {
+	frame, err := DefaultFrameCodec().Decode(c)
+	if err != nil {
+		return nil, err
+	}
+	return frame.Body, nil
+}
+
+// Encode 将 protobuf 格式的 ProtoInternal 包装为完整服务间消息帧。
 func (mc MsgCodec) Encode(c gnet.Conn, buf []byte) ([]byte, error) {
 	msg := &pb.ProtoInternal{}
 	err := proto.Unmarshal(buf, msg)
@@ -137,58 +163,7 @@ func (mc MsgCodec) Encode(c gnet.Conn, buf []byte) ([]byte, error) {
 	return EncodeMessage(msg)
 }
 
-// Decode decodes frames from TCP stream via specific implementation.
-// 读取一个完整的消息包；处理组包问题
+// Decode 从 TCP 流中读取一个完整服务间消息帧，并返回帧 Body。
 func (mc MsgCodec) Decode(c gnet.Conn) ([]byte, error) {
-
-	// buf := c.Read()    // TODO fix with gnet v2
-	var buf []byte // tmp
-	msg, err := DecodeData(buf)
-	lib.LogErrorAndReturn(err, "")
-	return msg.Data, err
-	/*
-		var (
-			in   inBuffer
-			err  error
-			size int
-			out  []byte
-		)
-		head := new(ServerMessageHead)
-		if mc.Offset < MessageHeadLength {
-			size, in = c.ReadN(MessageHeadLength)
-			//in = c.Read()
-			mc.Offset = uint32(size)
-			lib.SugarLogger.Debugf("read buffer length %d", MessageHeadLength)
-			buf, err := in.readN(MessageHeadLength)
-			if err != nil {
-				return nil, err
-			}
-			head.Decode(buf)
-			// TODO 校验包头
-			if ok, err := head.Check(); !ok {
-				lib.LogIfError(err, "decode message head error")
-				// 丢弃
-			}
-			// 读取包头完成
-			c.ShiftN(MessageHeadLength)
-			lib.SugarLogger.Debugf("size is %d", head)
-		}
-		if mc.Offset < uint32(MessageHeadLength+1+head.DataLength) {
-			data, err := in.read(MessageHeadLength+1, MessageHeadLength+1+head.DataLength)
-			if lib.LogErrorAndReturn(err, "decode message error") {
-				return nil, err
-			}
-			outMsg := &pb.ProtoInternal{
-				Cmd:       int32(head.Cmd),
-				SessionId: 0,
-				Data:      data,
-			}
-			//in = append(in, data...)
-			out, err = proto.Marshal(outMsg)
-			// TODO 校验包体
-			// 返回的是一个完整的消息体
-			c.ShiftN(MessageHeadLength + head.DataLength)
-		}
-		return out, err
-	*/
+	return decodeFrameBody(c)
 }
