@@ -20,6 +20,15 @@ type MsgCodec struct {
 
 type MsgSerializer struct{}
 
+const (
+	msgCmdLength        = 4
+	msgSessionIDLength  = 8
+	msgDstLengthLength  = 2
+	msgDataLengthLength = 4
+	msgMinLength        = msgCmdLength + msgSessionIDLength + msgDstLengthLength + msgDataLengthLength
+	msgMaxDstLength     = 0xffff
+)
+
 func (MsgSerializer) Name() string {
 	return string(CodecSchemeMsg)
 }
@@ -31,22 +40,22 @@ func (MsgSerializer) Marshal(msg proto.Message) ([]byte, error) {
 	}
 	dst := []byte(internal.Dst)
 	data := internal.Data
-	if len(dst) > 0xffff {
-		return nil, fmt.Errorf("dst length %d exceeds max length %d", len(dst), 0xffff)
+	if len(dst) > msgMaxDstLength {
+		return nil, fmt.Errorf("dst length %d exceeds max length %d", len(dst), msgMaxDstLength)
 	}
-	outLen := 4 + 8 + 2 + len(dst) + 4 + len(data)
+	outLen := msgMinLength + len(dst) + len(data)
 	out := make([]byte, outLen)
 	offset := 0
-	binary.LittleEndian.PutUint32(out[offset:offset+4], uint32(internal.Cmd))
-	offset += 4
-	binary.LittleEndian.PutUint64(out[offset:offset+8], internal.SessionId)
-	offset += 8
-	binary.LittleEndian.PutUint16(out[offset:offset+2], uint16(len(dst)))
-	offset += 2
+	binary.LittleEndian.PutUint32(out[offset:offset+msgCmdLength], uint32(internal.Cmd))
+	offset += msgCmdLength
+	binary.LittleEndian.PutUint64(out[offset:offset+msgSessionIDLength], internal.SessionId)
+	offset += msgSessionIDLength
+	binary.LittleEndian.PutUint16(out[offset:offset+msgDstLengthLength], uint16(len(dst)))
+	offset += msgDstLengthLength
 	copy(out[offset:offset+len(dst)], dst)
 	offset += len(dst)
-	binary.LittleEndian.PutUint32(out[offset:offset+4], uint32(len(data)))
-	offset += 4
+	binary.LittleEndian.PutUint32(out[offset:offset+msgDataLengthLength], uint32(len(data)))
+	offset += msgDataLengthLength
 	copy(out[offset:], data)
 	return out, nil
 }
@@ -56,23 +65,23 @@ func (MsgSerializer) Unmarshal(data []byte, msg proto.Message) error {
 	if !ok {
 		return fmt.Errorf("codec_msg only supports *pb.ProtoInternal, got %T", msg)
 	}
-	if len(data) < 18 {
+	if len(data) < msgMinLength {
 		return errors.New("codec_msg data is too short")
 	}
 	offset := 0
-	internal.Cmd = int32(binary.LittleEndian.Uint32(data[offset : offset+4]))
-	offset += 4
-	internal.SessionId = binary.LittleEndian.Uint64(data[offset : offset+8])
-	offset += 8
-	dstLen := int(binary.LittleEndian.Uint16(data[offset : offset+2]))
-	offset += 2
-	if len(data) < offset+dstLen+4 {
+	internal.Cmd = int32(binary.LittleEndian.Uint32(data[offset : offset+msgCmdLength]))
+	offset += msgCmdLength
+	internal.SessionId = binary.LittleEndian.Uint64(data[offset : offset+msgSessionIDLength])
+	offset += msgSessionIDLength
+	dstLen := int(binary.LittleEndian.Uint16(data[offset : offset+msgDstLengthLength]))
+	offset += msgDstLengthLength
+	if len(data) < offset+dstLen+msgDataLengthLength {
 		return errors.New("codec_msg dst length exceeds buffer")
 	}
 	internal.Dst = string(data[offset : offset+dstLen])
 	offset += dstLen
-	bodyLen := int(binary.LittleEndian.Uint32(data[offset : offset+4]))
-	offset += 4
+	bodyLen := int(binary.LittleEndian.Uint32(data[offset : offset+msgDataLengthLength]))
+	offset += msgDataLengthLength
 	if len(data) < offset+bodyLen {
 		return errors.New("codec_msg body length exceeds buffer")
 	}

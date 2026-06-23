@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"strings"
 	"testing"
 
 	"GoGameServer/src/pb"
@@ -143,6 +144,94 @@ func TestMsgSerializerRoundTrip(t *testing.T) {
 	}
 	if got.Cmd != msg.Cmd || got.Dst != msg.Dst || got.SessionId != msg.SessionId || !bytes.Equal(got.Data, msg.Data) {
 		t.Fatalf("unexpected decoded message: %+v", got)
+	}
+}
+
+func TestMsgSerializerEmptyFields(t *testing.T) {
+	serializer := MsgSerializer{}
+	msg := &pb.ProtoInternal{}
+
+	data, err := serializer.Marshal(msg)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got := &pb.ProtoInternal{Data: []byte("existing")}
+	if err := serializer.Unmarshal(data, got); err != nil {
+		t.Fatal(err)
+	}
+	if got.Cmd != 0 || got.Dst != "" || got.SessionId != 0 || len(got.Data) != 0 {
+		t.Fatalf("unexpected decoded empty message: %+v", got)
+	}
+}
+
+func TestMsgSerializerRejectsUnsupportedMessage(t *testing.T) {
+	serializer := MsgSerializer{}
+
+	if _, err := serializer.Marshal(&pb.Person{}); err == nil {
+		t.Fatalf("expected marshal error for unsupported message")
+	}
+	if err := serializer.Unmarshal(nil, &pb.Person{}); err == nil {
+		t.Fatalf("expected unmarshal error for unsupported message")
+	}
+}
+
+func TestMsgSerializerRejectsOversizedDst(t *testing.T) {
+	serializer := MsgSerializer{}
+	msg := &pb.ProtoInternal{
+		Dst: strings.Repeat("a", msgMaxDstLength+1),
+	}
+
+	if _, err := serializer.Marshal(msg); err == nil {
+		t.Fatalf("expected oversized dst error")
+	}
+}
+
+func TestMsgSerializerRejectsMalformedData(t *testing.T) {
+	serializer := MsgSerializer{}
+
+	tests := []struct {
+		name string
+		data []byte
+	}{
+		{
+			name: "short packet",
+			data: make([]byte, msgMinLength-1),
+		},
+		{
+			name: "dst length exceeds buffer",
+			data: func() []byte {
+				data := make([]byte, msgMinLength)
+				binary.LittleEndian.PutUint16(data[msgCmdLength+msgSessionIDLength:msgCmdLength+msgSessionIDLength+msgDstLengthLength], 1)
+				return data
+			}(),
+		},
+		{
+			name: "body length exceeds buffer",
+			data: func() []byte {
+				data := make([]byte, msgMinLength)
+				binary.LittleEndian.PutUint32(data[msgCmdLength+msgSessionIDLength+msgDstLengthLength:msgMinLength], 1)
+				return data
+			}(),
+		},
+		{
+			name: "trailing bytes",
+			data: func() []byte {
+				data, err := serializer.Marshal(&pb.ProtoInternal{Data: []byte("payload")})
+				if err != nil {
+					t.Fatal(err)
+				}
+				return append(data, 0)
+			}(),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := serializer.Unmarshal(tt.data, &pb.ProtoInternal{}); err == nil {
+				t.Fatalf("expected malformed data error")
+			}
+		})
 	}
 }
 
