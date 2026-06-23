@@ -51,18 +51,16 @@ func (r *RabbitClient) Start(url string, xName string, qName string, xType strin
 }
 
 func (r *RabbitClient) Stop() {
-	defer func(Channel *amqp.Channel) {
-		err := Channel.Close()
-		if err != nil {
+	if r.Channel != nil {
+		if err := r.Channel.Close(); err != nil {
 			LogIfError(err, "Close Rabbit Client error")
 		}
-	}(r.Channel)
-	defer func(Conn *amqp.Connection) {
-		err := Conn.Close()
-		if err != nil {
+	}
+	if r.Conn != nil {
+		if err := r.Conn.Close(); err != nil {
 			LogIfError(err, "Close amqp Connection error")
 		}
-	}(r.Conn)
+	}
 }
 
 // NewExchange declare a new exchange and add to map

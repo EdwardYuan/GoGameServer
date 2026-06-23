@@ -2,6 +2,7 @@ package service_gate
 
 import (
 	"net"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -23,11 +24,10 @@ type ServiceGate struct {
 	wg       sync.WaitGroup
 	*service_common.ServerCommon
 	gsConn    net.Conn
-	proxyLi   net.Listener
 	proxyConn net.Conn
-	runChan   chan bool
 	h         MessageHandler
 	msgChan   chan pb.ProtoInternal
+	stopOnce  sync.Once
 	//*gnet.EventServer
 	*gnet.BuiltinEventEngine
 }
@@ -36,23 +36,22 @@ func NewServiceGate(_name string, id int) *ServiceGate {
 	pool, err := ants.NewPool(ants.DefaultAntsPoolSize)
 	lib.SysLoggerFatal(err, "New Gate pool error")
 	return &ServiceGate{
-		workPool: pool,
-		wg:       sync.WaitGroup{},
-		ServerCommon: &service_common.ServerCommon{
-			Name: _name,
-			Id:   id,
-		},
-		msgChan: make(chan pb.ProtoInternal, lib.MaxMessageCount),
+		workPool:     pool,
+		wg:           sync.WaitGroup{},
+		ServerCommon: service_common.NewServerCommon(_name, id),
+		msgChan:      make(chan pb.ProtoInternal, lib.MaxMessageCount),
 		//EventServer:        new(gnet.EventServer),
 		BuiltinEventEngine: new(gnet.BuiltinEventEngine),
 	}
 }
 
 func (s *ServiceGate) SendToGame(buf []byte) {
-
+	lib.SugarLogger.Debugf("ServiceGate SendToGame is not wired yet, dropped %d bytes", len(buf))
 }
 
-func (s *ServiceGate) SendToLogin(buf []byte) {}
+func (s *ServiceGate) SendToLogin(buf []byte) {
+	lib.SugarLogger.Debugf("ServiceGate SendToLogin is not wired yet, dropped %d bytes", len(buf))
+}
 
 // SendToDB 不一定有用，暂时不需要gate直接和dbserver交互
 func (s *ServiceGate) SendToDB(buf []byte) {}
@@ -70,24 +69,9 @@ func (s *ServiceGate) Start() (err error) {
 		return err
 	}
 	lib.SugarLogger.Info("Service Gate Start: ", s.Name)
-	s.ServerCommon.Start()
-	go func() {
-		s.proxyLi, err = net.Listen("tcp", "127.0.0.1:9001")
-		lib.LogErrorAndReturn(err, "Service Gate listen ")
-		s.proxyConn, err = s.proxyLi.Accept()
-		lib.LogIfError(err, "Accept Proxy error")
-	}()
-	defer func() {
-		s.workPool.Release()
-		err := s.gsConn.Close()
-		if err != nil {
-			return
-		}
-		err = s.proxyConn.Close()
-		if err != nil {
-			return
-		}
-	}()
+	if err = s.ServerCommon.Start(); err != nil {
+		return err
+	}
 	go func(gg *ServiceGate) {
 		addr := "tcp://" + config.GameGateAddr + ":" + config.GameGatePort
 		err = gnet.Run(gg, addr, gnet.WithMulticore(true),
@@ -96,9 +80,56 @@ func (s *ServiceGate) Start() (err error) {
 		lib.FatalOnError(err, "fatal: start gnet error")
 		lib.Log(zap.InfoLevel, "gnet listening", err)
 	}(s)
+	if err = s.connectToProxy(); err != nil {
+		return err
+	}
+	// Gate 对外接收客户端连接，启动成功后注册到 etcd，供 Proxy 回包路由。
+	if err = s.registerService(); err != nil {
+		return err
+	}
+	// 主动连接 Proxy 后发送握手，Proxy 才能把该连接绑定到 gate 名称。
+	if err = s.syncProxyConnection(); err != nil {
+		return err
+	}
 
-	s.Run()
+	go s.Run()
 	return
+}
+
+func (s *ServiceGate) connectToProxy() error {
+	conn, err := net.Dial("tcp", config.ProxyAddr)
+	if err != nil {
+		return err
+	}
+	s.proxyConn = conn
+	return nil
+}
+
+// registerService 注册 Gate 的对外服务地址；db/login 当前不走该注册路径。
+func (s *ServiceGate) registerService() error {
+	port, err := strconv.Atoi(config.GameGatePort)
+	if err != nil {
+		return err
+	}
+	info := service_common.NewServerInfo(int32(s.Id), s.Name, "gate", lib.GetLocalIP(lib.IPv4), int32(port))
+	return service_common.RegisterService(config.EtcdUrl, info)
+}
+
+// syncProxyConnection 发送 InternalProxySync 握手，让 Proxy 记录 gateName -> conn。
+func (s *ServiceGate) syncProxyConnection() error {
+	if s.proxyConn == nil {
+		return net.ErrClosed
+	}
+	msg := &pb.ProtoInternal{
+		Cmd: pb.InternalProxySync,
+		Dst: s.Name,
+	}
+	packet, err := codec.EncodeMessage(msg)
+	if err != nil {
+		return err
+	}
+	_, err = s.proxyConn.Write(packet)
+	return err
 }
 
 func (s *ServiceGate) OnTraffic(c gnet.Conn) (action gnet.Action) {
@@ -133,14 +164,18 @@ func (s *ServiceGate) handleFrame(frame []byte) {
 			err := s.workPool.Submit(func() {
 				msg := &pb.ProtoInternal{}
 				err = codec.Unmarshal(frame, msg)
-				lib.LogErrorAndReturn(err, "")
-				if msg.Dst != s.Name {
-					switch msg.Cmd {
-					case pb.InternalGateToProxy:
-						if strings.Contains(msg.Dst, "proxy") {
-							s.SendToProxyMessage(msg)
-						}
-					case pb.InternalProxyToGate:
+				if lib.LogErrorAndReturn(err, "") {
+					return
+				}
+				switch msg.Cmd {
+				case pb.InternalGateToProxy:
+					// 目标是 Proxy 的消息直接写入已握手的 proxyConn。
+					if strings.Contains(msg.Dst, "proxy") {
+						s.SendToProxyMessage(msg)
+					}
+				case pb.InternalProxyToGate:
+					// 目标是当前 Gate 的消息进入本地处理队列。
+					if msg.Dst == "" || msg.Dst == s.Name {
 						s.msgChan <- *msg
 					}
 				}
@@ -154,10 +189,23 @@ func (s *ServiceGate) handleFrame(frame []byte) {
 }
 
 func (s *ServiceGate) Stop() {
-	defer func() {
-		s.workPool.Release()
-	}()
-	s.wg.Wait()
+	s.stopOnce.Do(func() {
+		s.ServerCommon.Stop()
+		if s.gsConn != nil {
+			if err := s.gsConn.Close(); err != nil {
+				lib.LogIfError(err, "ServiceGate close game connection error")
+			}
+		}
+		if s.proxyConn != nil {
+			if err := s.proxyConn.Close(); err != nil {
+				lib.LogIfError(err, "ServiceGate close proxy connection error")
+			}
+		}
+		if s.workPool != nil {
+			s.workPool.Release()
+		}
+		s.wg.Wait()
+	})
 }
 
 func (s *ServiceGate) Run() {
@@ -165,17 +213,20 @@ func (s *ServiceGate) Run() {
 		select {
 		case msg := <-s.msgChan: // TODO 线程安全
 			s.handleMessage(msg)
-		case <-s.runChan:
-			lib.SugarLogger.Info("running")
 		case <-s.CloseChan:
-			close(s.runChan)
-			close(s.CloseChan)
+			s.Stop()
+			return
 		}
 	}
 }
 
 func (s *ServiceGate) handleMessage(msg pb.ProtoInternal) {
-
+	switch msg.Cmd {
+	case pb.InternalProxyToGate:
+		s.SendToGame(msg.Data)
+	default:
+		lib.SugarLogger.Debugf("ServiceGate received unsupported message cmd=%d dst=%s", msg.Cmd, msg.Dst)
+	}
 }
 
 func (s *ServiceGate) SendToProxy(data []byte) {
@@ -202,10 +253,5 @@ func (s *ServiceGate) SendToProxyMessage(msg *pb.ProtoInternal) {
 }
 
 func (s *ServiceGate) LoadConfig(path string) error {
-	err := s.ServerCommon.LoadConfig(path)
-	if err != nil {
-		lib.LogIfError(err, "SererCommon load configure file error")
-		return err
-	}
-	return nil
+	return s.ServerCommon.LoadConfig(path)
 }

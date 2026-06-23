@@ -1,14 +1,15 @@
 package service_game
 
 import (
-	"errors"
+	"io"
 	"net"
+	"strconv"
 	"sync"
 	"time"
 
 	"GoGameServer/src/codec"
+	"GoGameServer/src/config"
 	"GoGameServer/src/game"
-	"GoGameServer/src/global"
 	"GoGameServer/src/lib"
 	"GoGameServer/src/pb"
 	"GoGameServer/src/protocol"
@@ -19,7 +20,6 @@ import (
 )
 
 type GameServer struct {
-	runChannel chan bool
 	*service_common.ServerCommon
 	wg           sync.WaitGroup
 	gateConn     net.Conn
@@ -27,65 +27,95 @@ type GameServer struct {
 	proxyConn    net.Conn
 	recvChan     chan protocol.Message
 	clients      map[uint64]*Client // gate发过来的SessionId到角色的映射
+	clientsMu    sync.RWMutex
 	AgentManager *game.AgentManager
 
 	// 这是一行注释
 	// 下面这部分分离到网络处理中
 	readBuffer []byte
 	readOffset int
+	stopOnce   sync.Once
 }
 
 func NewGameServer(_name string, id int) *GameServer {
 	lib.SugarLogger.Info("Service ", _name, " created")
 	return &GameServer{
-		ServerCommon: &service_common.ServerCommon{
-			Name: _name,
-			Id:   id,
-		},
+		ServerCommon: service_common.NewServerCommon(_name, id),
 		wg:           sync.WaitGroup{},
-		runChannel:   make(chan bool),
+		recvChan:     make(chan protocol.Message, lib.MaxMessageCount),
 		clients:      make(map[uint64]*Client, lib.MaxOnlineClientCount),
 		AgentManager: game.NewAgentManager(),
+		readBuffer:   make([]byte, 0, lib.MaxReceiveBufCap),
 	}
-}
-
-func (gs *GameServer) RegisterService() {
-	etcd := viper.Sub("etcd")
-	endpoint := etcd.GetString("endpoints")
-	global.RegisterService([]string{endpoint}, gs.Name, "game", "")
-
-	// cli, err := clientv3.New(clientv3.Config{
-	//	Endpoints:   []string{endpoint}, // TODO 配置多个etcd节点
-	//	DialTimeout: 5 * time.Second,
-	// })
-	// lib.FatalOnError(err, "New Proxy Service error")
-	// defer cli.Close()
-	// _, err = cli.Put(context.Background(), gs.Name, strconv.Itoa(gs.Id))
-	// lib.FatalOnError(err, "Failed to register Service to etcd.")
 }
 
 func (gs *GameServer) Start() (err error) {
 	if err = codec.SetDefaultCodecScheme(codec.CodecSchemeProtobuf); err != nil {
 		return err
 	}
-	gs.ServerCommon.Start()
+	if err = gs.ServerCommon.Start(); err != nil {
+		return err
+	}
 	lib.SugarLogger.Info("Service ", gs.Name, " Start...")
-	// gs.RegisterService()
 	// 连接Gate
 	err = gs.connectToGate()
-	lib.FatalOnError(err, "Connect to Gate")
+	if err != nil {
+		return err
+	}
 	// 连接DBServer
 	err = gs.connectToDBServer()
-	lib.FatalOnError(err, "Connect to DBServer")
+	if err != nil {
+		return err
+	}
 	// 连接Proxy
 	err = gs.connectToProxy()
+	if err != nil {
+		return err
+	}
+	// 基础依赖连接成功后再注册自身，避免 etcd 中出现不可用的 game 实例。
+	if err = gs.registerService(); err != nil {
+		return err
+	}
+	// 通知 Proxy 当前 TCP 连接对应的服务名，供后续路由使用。
+	if err = gs.syncProxyConnection(); err != nil {
+		return err
+	}
 	go gs.netLoop()
 	go gs.Run()
 	return
 }
 
+func (gs *GameServer) registerService() error {
+	port, err := strconv.Atoi(config.GameServerPort)
+	if err != nil {
+		return err
+	}
+	info := service_common.NewServerInfo(int32(gs.Id), gs.Name, "game", lib.GetLocalIP(lib.IPv4), int32(port))
+	return service_common.RegisterService(config.EtcdUrl, info)
+}
+
+// syncProxyConnection 发送 InternalProxySync 握手，让 Proxy 将连接绑定到 gs.Name。
+func (gs *GameServer) syncProxyConnection() error {
+	if gs.proxyConn == nil {
+		return io.ErrClosedPipe
+	}
+	msg := &pb.ProtoInternal{
+		Cmd: pb.InternalProxySync,
+		Dst: gs.Name,
+	}
+	packet, err := codec.EncodeMessage(msg)
+	if err != nil {
+		return err
+	}
+	_, err = gs.proxyConn.Write(packet)
+	return err
+}
+
 func (gs *GameServer) connectToProxy() (err error) {
-	proxyAddr := viper.GetString("proxy.addr") + viper.GetString("proxy.port")
+	proxyAddr := viper.GetString("proxy.addr")
+	if port := viper.GetString("proxy.port"); port != "" {
+		proxyAddr = proxyAddr + ":" + port
+	}
 	gs.proxyConn, err = net.DialTimeout("tcp", proxyAddr, 15*time.Second)
 	lib.LogIfError(err, "connect to proxy")
 	if gs.proxyConn != nil {
@@ -119,39 +149,71 @@ func (gs *GameServer) connectToDBServer() (err error) {
 }
 
 func (gs *GameServer) netLoop() {
+	if gs.proxyConn == nil {
+		lib.LogIfError(io.ErrClosedPipe, "GameServer proxy connection is nil")
+		return
+	}
+	buf := make([]byte, lib.MaxReceiveBufCap)
 	for {
-
-		size, err := gs.proxyConn.Read(gs.readBuffer[gs.readOffset:codec.MessageHeadLength])
-		lib.LogIfError(err, "GameServer read buffer error")
-		if size != codec.MessageHeadLength {
-			lib.LogIfError(errors.New("invalid read size"), " GameServer read buffer error")
+		n, err := gs.proxyConn.Read(buf)
+		if err != nil {
+			lib.LogIfError(err, "GameServer read proxy error")
+			return
 		}
-		head := new(codec.ServerMessageHead)
-		head.Decode(gs.readBuffer[:codec.MessageHeadLength])
-		if ok, err := head.Check(); err != nil || !ok {
-			lib.LogIfError(err, "")
+		gs.readBuffer = append(gs.readBuffer, buf[:n]...)
+		for {
+			// TCP 是流式协议，这里从累积缓冲区中拆出完整帧。
+			frame, consumed, err := codec.DecodeFrame(gs.readBuffer)
+			if err == codec.ErrIncompletePacket {
+				break
+			}
+			if err != nil {
+				lib.LogIfError(err, "GameServer decode proxy frame error")
+				gs.readBuffer = gs.readBuffer[:0]
+				break
+			}
+			gs.readBuffer = gs.readBuffer[consumed:]
+			internal := &pb.ProtoInternal{}
+			if err := codec.Unmarshal(frame.Body, internal); err != nil {
+				lib.LogIfError(err, "GameServer unmarshal internal message error")
+				continue
+			}
+			msg := protocol.Message{
+				SessionId: internal.SessionId,
+				Command:   uint32(internal.Cmd),
+				Data:      internal.Data,
+			}
+			// 网络 goroutine 只投递消息，业务处理收敛到 Run 循环。
+			select {
+			case gs.recvChan <- msg:
+			case <-gs.CloseChan:
+				return
+			}
 		}
 	}
-
 }
 
 func (gs *GameServer) Stop() {
-	defer func() {
-		close(gs.runChannel)
-		err := gs.dbConn.Close()
-		if err != nil {
-			lib.LogIfError(err, "Close DB Connection Error")
-			return
+	gs.stopOnce.Do(func() {
+		gs.ServerCommon.Stop()
+		if gs.dbConn != nil {
+			if err := gs.dbConn.Close(); err != nil {
+				lib.LogIfError(err, "Close DB Connection Error")
+			}
 		}
-		err = gs.gateConn.Close()
-		if err != nil {
-			lib.LogIfError(err, "Close Gate Connection Error")
-			return
+		if gs.gateConn != nil {
+			if err := gs.gateConn.Close(); err != nil {
+				lib.LogIfError(err, "Close Gate Connection Error")
+			}
 		}
-	}()
-	gs.wg.Wait()
-	gs.runChannel <- false
-	lib.SugarLogger.Info("Service ", gs.Name, " Stopped.")
+		if gs.proxyConn != nil {
+			if err := gs.proxyConn.Close(); err != nil {
+				lib.LogIfError(err, "Close Proxy Connection Error")
+			}
+		}
+		gs.wg.Wait()
+		lib.SugarLogger.Info("Service ", gs.Name, " Stopped.")
+	})
 }
 
 func (gs *GameServer) Run() {
@@ -159,8 +221,7 @@ func (gs *GameServer) Run() {
 		select {
 		case <-gs.CloseChan:
 			gs.Stop()
-		case <-gs.runChannel:
-			lib.SugarLogger.Info("running...")
+			return
 		case msg, ok := <-gs.recvChan:
 			if ok {
 				gs.OnMessageReceived(msg)
@@ -177,6 +238,9 @@ func (gs *GameServer) OnMessageReceived(msg protocol.Message) {
 		client := gs.NewClient(nil, 0)
 		err := proto.Unmarshal(msg.Data, protoMessage)
 		lib.LogIfError(err, "Unmarshal Message error")
+		gs.clientsMu.Lock()
+		gs.clients[msg.SessionId] = client
+		gs.clientsMu.Unlock()
 		select {
 		case client.Rev <- protoMessage.Data:
 			err = client.Start()
@@ -185,19 +249,25 @@ func (gs *GameServer) OnMessageReceived(msg protocol.Message) {
 			lib.SugarLogger.Errorf("Player login unmarshal message error %v", err)
 		}
 	case pb.CMD_INTERNAL_PLAYER_LOGOUT:
+		gs.clientsMu.RLock()
 		client := gs.clients[msg.SessionId]
+		gs.clientsMu.RUnlock()
 		if client != nil {
 			// Todo
 			err := client.Stop()
 			lib.LogIfError(err, "client stop error")
 			go func() {
 				if client.closed {
+					gs.clientsMu.Lock()
 					delete(gs.clients, msg.SessionId)
+					gs.clientsMu.Unlock()
 				}
 			}()
 		}
 	case pb.CMD_INTERNAL_PLAYER_TO_GAME_MESSAGE:
+		gs.clientsMu.RLock()
 		client := gs.clients[msg.SessionId]
+		gs.clientsMu.RUnlock()
 		if client != nil {
 			err := proto.Unmarshal(msg.Data, protoMessage)
 			lib.LogIfError(err, "Unmarshal Message error")
