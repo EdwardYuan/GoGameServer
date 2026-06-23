@@ -30,7 +30,7 @@ func (f *fakeSerializer) Unmarshal([]byte, proto.Message) error {
 }
 
 func TestDefaultSerializerIsProtobuf(t *testing.T) {
-	if err := SetDefaultSerializer(ProtobufSerializer{}); err != nil {
+	if err := SetDefaultCodecScheme(CodecSchemeProtobuf); err != nil {
 		t.Fatal(err)
 	}
 
@@ -55,7 +55,7 @@ func TestDefaultSerializerIsProtobuf(t *testing.T) {
 }
 
 func TestSetDefaultSerializer(t *testing.T) {
-	defer SetDefaultSerializer(ProtobufSerializer{})
+	defer SetDefaultCodecScheme(CodecSchemeProtobuf)
 
 	fake := &fakeSerializer{}
 	if err := SetDefaultSerializer(fake); err != nil {
@@ -77,7 +77,7 @@ func TestSetDefaultSerializer(t *testing.T) {
 }
 
 func TestSetDefaultSerializerNil(t *testing.T) {
-	if err := SetDefaultSerializer(ProtobufSerializer{}); err != nil {
+	if err := SetDefaultCodecScheme(CodecSchemeProtobuf); err != nil {
 		t.Fatal(err)
 	}
 	before := DefaultSerializer()
@@ -87,6 +87,91 @@ func TestSetDefaultSerializerNil(t *testing.T) {
 	}
 	if DefaultSerializer() != before {
 		t.Fatalf("nil serializer replaced default serializer")
+	}
+}
+
+func TestSetDefaultCodecScheme(t *testing.T) {
+	defer SetDefaultCodecScheme(CodecSchemeProtobuf)
+
+	if err := SetDefaultCodecScheme(CodecSchemeMsg); err != nil {
+		t.Fatal(err)
+	}
+	if DefaultSerializer().Name() != string(CodecSchemeMsg) {
+		t.Fatalf("got %q, want %q", DefaultSerializer().Name(), CodecSchemeMsg)
+	}
+
+	if err := SetDefaultCodecScheme(CodecSchemeProtobuf); err != nil {
+		t.Fatal(err)
+	}
+	if DefaultSerializer().Name() != string(CodecSchemeProtobuf) {
+		t.Fatalf("got %q, want %q", DefaultSerializer().Name(), CodecSchemeProtobuf)
+	}
+}
+
+func TestSetDefaultCodecSchemeUnknown(t *testing.T) {
+	defer SetDefaultCodecScheme(CodecSchemeProtobuf)
+
+	if err := SetDefaultCodecScheme(CodecSchemeMsg); err != nil {
+		t.Fatal(err)
+	}
+	before := DefaultSerializer()
+	if err := SetDefaultCodecScheme("unknown"); err == nil {
+		t.Fatalf("expected unsupported codec scheme error")
+	}
+	if DefaultSerializer() != before {
+		t.Fatalf("unsupported codec scheme replaced default serializer")
+	}
+}
+
+func TestMsgSerializerRoundTrip(t *testing.T) {
+	serializer := MsgSerializer{}
+	msg := &pb.ProtoInternal{
+		Cmd:       pb.InternalGateToProxy,
+		Dst:       "proxy-1",
+		SessionId: 77,
+		Data:      []byte("payload"),
+	}
+
+	data, err := serializer.Marshal(msg)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got := &pb.ProtoInternal{}
+	if err := serializer.Unmarshal(data, got); err != nil {
+		t.Fatal(err)
+	}
+	if got.Cmd != msg.Cmd || got.Dst != msg.Dst || got.SessionId != msg.SessionId || !bytes.Equal(got.Data, msg.Data) {
+		t.Fatalf("unexpected decoded message: %+v", got)
+	}
+}
+
+func TestDefaultFrameCodecUsesSelectedScheme(t *testing.T) {
+	defer SetDefaultCodecScheme(CodecSchemeProtobuf)
+	if err := SetDefaultCodecScheme(CodecSchemeMsg); err != nil {
+		t.Fatal(err)
+	}
+
+	msg := &pb.ProtoInternal{
+		Cmd:       pb.InternalGateToProxy,
+		Dst:       "proxy-1",
+		SessionId: 77,
+		Data:      []byte("payload"),
+	}
+	packet, err := DefaultFrameCodec().Encode(uint8(msg.Cmd), 0, msg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	frame, _, err := DecodeFrame(packet)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := &pb.ProtoInternal{}
+	if err := Unmarshal(frame.Body, got); err != nil {
+		t.Fatal(err)
+	}
+	if got.Cmd != msg.Cmd || got.Dst != msg.Dst || got.SessionId != msg.SessionId || !bytes.Equal(got.Data, msg.Data) {
+		t.Fatalf("unexpected decoded message: %+v", got)
 	}
 }
 

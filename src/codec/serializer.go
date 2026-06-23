@@ -2,12 +2,20 @@ package codec
 
 import (
 	"errors"
+	"fmt"
 	"sync"
 
 	"google.golang.org/protobuf/proto"
 )
 
 var ErrNilSerializer = errors.New("serializer is nil")
+
+type CodecScheme string
+
+const (
+	CodecSchemeProtobuf CodecScheme = "protobuf"
+	CodecSchemeMsg      CodecScheme = "codec_msg"
+)
 
 type Serializer interface {
 	Name() string
@@ -48,6 +56,17 @@ func SetDefaultSerializer(serializer Serializer) error {
 	defaultSerializer = serializer
 	defaultSerializerMu.Unlock()
 	return nil
+}
+
+func SetDefaultCodecScheme(scheme CodecScheme) error {
+	switch scheme {
+	case CodecSchemeProtobuf:
+		return SetDefaultSerializer(ProtobufSerializer{})
+	case CodecSchemeMsg:
+		return SetDefaultSerializer(MsgSerializer{})
+	default:
+		return fmt.Errorf("unsupported codec scheme %q", scheme)
+	}
 }
 
 func Marshal(msg proto.Message) ([]byte, error) {

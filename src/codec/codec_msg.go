@@ -1,6 +1,10 @@
 package codec
 
 import (
+	"encoding/binary"
+	"errors"
+	"fmt"
+
 	"GoGameServer/src/lib"
 	"GoGameServer/src/pb"
 	gnet "github.com/panjf2000/gnet/v2"
@@ -12,6 +16,71 @@ type MsgCodec struct {
 	Head   ServerMessageHead
 	Offset uint32
 	Data   []byte
+}
+
+type MsgSerializer struct{}
+
+func (MsgSerializer) Name() string {
+	return string(CodecSchemeMsg)
+}
+
+func (MsgSerializer) Marshal(msg proto.Message) ([]byte, error) {
+	internal, ok := msg.(*pb.ProtoInternal)
+	if !ok {
+		return nil, fmt.Errorf("codec_msg only supports *pb.ProtoInternal, got %T", msg)
+	}
+	dst := []byte(internal.Dst)
+	data := internal.Data
+	if len(dst) > 0xffff {
+		return nil, fmt.Errorf("dst length %d exceeds max length %d", len(dst), 0xffff)
+	}
+	outLen := 4 + 8 + 2 + len(dst) + 4 + len(data)
+	out := make([]byte, outLen)
+	offset := 0
+	binary.LittleEndian.PutUint32(out[offset:offset+4], uint32(internal.Cmd))
+	offset += 4
+	binary.LittleEndian.PutUint64(out[offset:offset+8], internal.SessionId)
+	offset += 8
+	binary.LittleEndian.PutUint16(out[offset:offset+2], uint16(len(dst)))
+	offset += 2
+	copy(out[offset:offset+len(dst)], dst)
+	offset += len(dst)
+	binary.LittleEndian.PutUint32(out[offset:offset+4], uint32(len(data)))
+	offset += 4
+	copy(out[offset:], data)
+	return out, nil
+}
+
+func (MsgSerializer) Unmarshal(data []byte, msg proto.Message) error {
+	internal, ok := msg.(*pb.ProtoInternal)
+	if !ok {
+		return fmt.Errorf("codec_msg only supports *pb.ProtoInternal, got %T", msg)
+	}
+	if len(data) < 18 {
+		return errors.New("codec_msg data is too short")
+	}
+	offset := 0
+	internal.Cmd = int32(binary.LittleEndian.Uint32(data[offset : offset+4]))
+	offset += 4
+	internal.SessionId = binary.LittleEndian.Uint64(data[offset : offset+8])
+	offset += 8
+	dstLen := int(binary.LittleEndian.Uint16(data[offset : offset+2]))
+	offset += 2
+	if len(data) < offset+dstLen+4 {
+		return errors.New("codec_msg dst length exceeds buffer")
+	}
+	internal.Dst = string(data[offset : offset+dstLen])
+	offset += dstLen
+	bodyLen := int(binary.LittleEndian.Uint32(data[offset : offset+4]))
+	offset += 4
+	if len(data) < offset+bodyLen {
+		return errors.New("codec_msg body length exceeds buffer")
+	}
+	internal.Data = append(internal.Data[:0], data[offset:offset+bodyLen]...)
+	if len(data) != offset+bodyLen {
+		return fmt.Errorf("codec_msg has %d trailing bytes", len(data)-(offset+bodyLen))
+	}
+	return nil
 }
 
 func EncodeMessage(msg *pb.ProtoInternal) (out []byte, err error) {
