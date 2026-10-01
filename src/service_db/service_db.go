@@ -66,6 +66,16 @@ func (s *ServiceDB) Run() {
 		case <-s.CloseChan:
 			s.Stop()
 			return
+		case <-s.SvrTick.C:
+			lib.SugarLogger.Info("tick")
+
+			return
+		default:
+			// No message received, continue running
+			lib.SugarLogger.Info("no message received")
+			lib.SysLoggerFatal(nil, "no message received")
+			return
+
 		}
 	}
 }
